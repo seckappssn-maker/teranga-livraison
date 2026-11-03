@@ -848,12 +848,33 @@ function demoSeed(){
 const CCODE=(Q.get('c')||'').toLowerCase();
 let PUB=lsGet('tl-pub-'+CCODE,null), MINE=lsGet('tl-mine-'+CCODE,[]), SUIVI={}, PV={city:'',mode:'',done:null,vocal:null,rec:false,recSec:0,micErr:false,pos:null,posBusy:false,sending:false};
 async function pubLoad(){try{const d=await rpc('liv_public',{p_code:CCODE});if(d&&d.ok){PUB=d;lsSet('tl-pub-'+CCODE,d);}else PUB={ok:false};}catch(e){if(!PUB)NETMSG=errMsg(e);}render();pubSuivi();}
-async function pubSuivi(){const act=MINE.filter(m=>!m.fin).slice(-8);for(const m of act){try{const s=await rpc('liv_suivi',{p_code:CCODE,p_id:m.id,p_tk:m.tk});if(s&&s.ok){SUIVI[m.id]=s;if(s.statut==='livree'||s.statut==='annulee')m.fin=1;}}catch(e){}}
+async function pubSuivi(){const act=MINE.filter(m=>!m.fin||!m.last).slice(-8);for(const m of act){try{const s=await rpc('liv_suivi',{p_code:CCODE,p_id:m.id,p_tk:m.tk});if(s&&s.ok){SUIVI[m.id]=s;if(s.statut==='livree'||s.statut==='annulee'){m.fin=1;m.last={statut:s.statut,t:s.t,prix:s.prix,zone:s.zone,de:s.de,type:s.type};}}}catch(e){}}
   lsSet('tl-mine-'+CCODE,MINE);if(MODE==='public'&&!PV.rec)renderKeepPub();}
 function renderKeepPub(){const y=window.scrollY;renderPublic();window.scrollTo(0,y);}
-function getPos(cb){if(!navigator.geolocation){toast('Ce téléphone ne donne pas la position');return cb(null);}
+
+// ----- aide quand le téléphone bloque le micro ou la position -----
+let GEOERR='';
+const UA=navigator.userAgent||'';
+const isIOS=/iP(hone|ad|od)/.test(UA)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const inApp=/Instagram|FBAN|FBAV|FB_IAB|TikTok|musical_ly|Bytedance|Snapchat|Line\//i.test(UA);
+const isChromeIOS=/CriOS/.test(UA);
+function openHere(){return '<div>Vous êtes dans une application (TikTok, Instagram…). Touchez <b>⋯</b> en haut et choisissez <b>« Ouvrir dans le navigateur »</b> (Safari ou Chrome).</div>';}
+function micHelp(){const w=PUB&&PUB.tel?'<a class="b b-go" target="_blank" rel="noopener" href="'+waLink(PUB.tel,'Bonjour, je vous envoie un vocal pour une livraison.')+'">💬 Envoyer le vocal sur WhatsApp</a>':'';
+  let t;
+  if(PV.micErr==='app'||inApp)t=inApp?openHere():'<div>Ce navigateur ne peut pas enregistrer. Ouvrez ce lien dans <b>Safari</b> ou <b>Chrome</b>.</div>';
+  else if(PV.micErr==='nodev')t='<div>Pas de micro trouvé sur ce téléphone.</div>';
+  else if(isIOS)t='<div><b>Le micro est bloqué.</b> '+(isChromeIOS?'Réglages de l\'iPhone → <b>Apps</b> → <b>Chrome</b> → activez <b>Micro</b>.':'Réglages de l\'iPhone → <b>Apps</b> → <b>Safari</b> → <b>Micro</b> → <b>Autoriser</b> (ou « Demander »).')+' Puis rouvrez cette page et touchez <b>Autoriser</b>.</div>';
+  else t='<div><b>Le micro est bloqué.</b> Touchez le <b>cadenas</b> à côté de l\'adresse en haut → <b>Autorisations</b> → <b>Micro</b> → <b>Autoriser</b>. Puis rouvrez cette page.</div>';
+  return '<div class="note stack" style="text-align:left">'+t+'<div class="small">Ou envoyez votre vocal sur WhatsApp :</div>'+w+'</div>';}
+function geoHelp(){let t;
+  if(GEOERR==='lost')t='<div>Position introuvable. Allez près d\'une fenêtre ou dehors, puis réessayez.</div>';
+  else if(GEOERR==='app'||inApp)t=inApp?openHere():'<div>Ce navigateur ne donne pas la position. Ouvrez ce lien dans <b>Safari</b> ou <b>Chrome</b>.</div>';
+  else if(isIOS)t='<div><b>La position est bloquée.</b> Réglages de l\'iPhone → <b>Confidentialité et sécurité</b> → <b>Service de localisation</b> (activé) → '+(isChromeIOS?'<b>Chrome</b>':'<b>Sites web Safari</b>')+' → <b>« Lorsque l\'app est active »</b> et activez <b>Position exacte</b>. Puis rouvrez cette page.</div>';
+  else t='<div><b>La position est bloquée.</b> Activez la <b>localisation</b> du téléphone, puis touchez le <b>cadenas</b> à côté de l\'adresse → <b>Autorisations</b> → <b>Position</b> → <b>Autoriser</b>.</div>';
+  return '<div class="note stack" style="text-align:left">'+t+'<div class="small">Sinon, écrivez bien le quartier et un repère : le livreur vous appellera.</div></div>';}
+function getPos(cb){GEOERR='';if(!navigator.geolocation){GEOERR='app';return cb(null);}
   navigator.geolocation.getCurrentPosition(p=>cb({lat:+p.coords.latitude.toFixed(6),lng:+p.coords.longitude.toFixed(6),acc:Math.round(p.coords.accuracy)}),
-    e=>{toast(e&&e.code===1?'Position refusée : autorisez la position dans les réglages du téléphone':'Position introuvable : réessayez dehors');cb(null);},{enableHighAccuracy:true,timeout:15000,maximumAge:60000});}
+    e=>{GEOERR=e&&e.code===1?'deny':'lost';if(GEOERR==='lost')toast('Position introuvable : réessayez dehors');else toast('Position bloquée par le téléphone : voir en dessous');cb(null);},{enableHighAccuracy:true,timeout:15000,maximumAge:60000});}
 function renderPublic(){
   const app=$('app');$('top').hidden=true;$('tabs').innerHTML='';
   if(!PUB){app.innerHTML='<div class="loading" style="padding:40px;text-align:center">'+(NETMSG?esc(NETMSG):'<span class="spin"></span>')+'</div>';return;}
@@ -879,15 +900,15 @@ function renderPublic(){
   h+='<div class="hint" style="text-align:center;margin-top:18px">Avec Teranga Livraison · Seck Apps</div>';
   app.innerHTML=h;
 }
-function posBlock(){return '<div class="card stack" style="background:var(--sunk);border:0">'+(PV.pos?'<div class="small">📍 Position envoyée avec la demande (précision '+PV.pos.acc+' m). <button type="button" class="b b-line b-sm" data-a="posDel">Retirer</button></div>':
-  '<button type="button" class="b b-line" data-a="posGet"'+(PV.posBusy?' disabled':'')+'>'+(PV.posBusy?'<span class="spin"></span> Recherche…':'📍 Envoyer ma position (où on me prend)')+'</button><div class="hint">Le livreur arrive directement chez vous, sans chercher.</div>')+'</div>';}
+function posBlock(){return '<div class="card stack" style="background:var(--sunk);border:0">'+(PV.pos?'<div class="small">📍 Position ajoutée (précision '+PV.pos.acc+' m) : elle part avec votre demande. <button type="button" class="b b-line b-sm" data-a="posDel">Retirer</button></div>':
+  '<button type="button" class="b b-line" data-a="posGet"'+(PV.posBusy?' disabled':'')+'>'+(PV.posBusy?'<span class="spin"></span> Recherche…':'📍 Envoyer ma position (où on me prend)')+'</button>'+(GEOERR?geoHelp():'<div class="hint">Le livreur arrive directement chez vous, sans chercher.</div>'))+'</div>';}
 function pubVocal(){
   if(PV.vocal)return '<div class="card stack" style="margin-top:12px"><h2>Votre vocal</h2><audio controls src="'+esc(PV.vocal.url)+'" style="width:100%"></audio>'+posBlock()+
     '<label class="f">Mon numéro (pour vous rappeler)<input id="v_tel" inputmode="tel" placeholder="77 000 00 00" value="'+esc(lsGet('tl-montel',''))+'" style="font-size:22px;font-family:var(--display);font-weight:800;letter-spacing:.05em"></label>'+
     '<div class="row"><button class="b b-line" data-a="vAgain">🔁 Recommencer</button><button class="b b-go b-big" data-a="vSend"'+(PV.sending?' disabled':'')+'>'+(PV.sending?'<span class="spin"></span> Envoi…':'Envoyer le vocal')+'</button></div></div>';
   return '<div class="card stack" style="margin-top:12px;text-align:center"><div>Dites où on prend, où on livre, et ce qu\'on transporte.</div>'+
     '<button class="recbtn'+(PV.rec?' on':'')+'" data-a="rec" aria-pressed="'+PV.rec+'">'+(PV.rec?'■ Arrêter':'● Parler')+'</button><div class="timer" aria-live="polite">0:'+pad(PV.recSec)+' / 1:00</div>'+
-    (PV.micErr?'<div class="note">Le micro ne marche pas ici. Autorisez le micro pour ce site, ou envoyez votre vocal sur WhatsApp.</div>':'<div class="hint">Touchez une fois pour parler, encore une fois pour arrêter. 1 minute au plus.</div>')+'</div>';
+    (PV.micErr?micHelp():'<div class="hint">Touchez une fois pour parler, encore une fois pour arrêter. 1 minute au plus.</div>')+'</div>';
 }
 function pubForm(){const t=lsGet('tl-montel','');
   return '<form id="fClient" class="card stack" style="margin-top:12px">'+grp('Pour quoi ?',chips('k_type',[['colis','📦 Un colis'],['personne','🛵 Me transporter']],'colis'))+
@@ -902,7 +923,7 @@ function pubForm(){const t=lsGet('tl-montel','');
 }
 function pubDestText(m){return 'Bonjour, je vous envoie un colis avec '+((PUB&&PUB.nom)||'Teranga Livraison')+' (course N° '+m.no+').'+(m.cl?' Votre code de livraison : '+m.cl+'. Donnez-le au livreur seulement quand vous avez le colis.':'')+' Touchez ce lien pour envoyer votre position au livreur : '+SITE+'commande.html?c='+CCODE+'&d='+m.id+'&k='+m.dtk;}
 function suiviCard(m){
-  const s=SUIVI[m.id]||{statut:'nouvelle',t:{cree:m.t},type:'colis'};const order=['nouvelle','prise','recuperee','livree'];const i=order.indexOf(s.statut);const T=s.t||{};
+  const s=SUIVI[m.id]||m.last||{statut:'nouvelle',t:{cree:m.t},type:'colis'};const order=['nouvelle','prise','recuperee','livree'];const i=order.indexOf(s.statut);const T=s.t||{};
   if(s.statut==='annulee')return '<div class="card"><b>N° '+esc(m.no)+'</b> · <span class="pill p-annulee">Annulée</span></div>';
   const steps=[['Demande reçue',hhmm(T.cree)],['Un livreur arrive',hhmm(T.prise)],[s.type==='personne'?'Vous êtes en route':'Colis récupéré',hhmm(T.recup)],[s.type==='personne'?'Arrivé':'Livré',hhmm(T.livree)]];
   return '<div class="card stack"><div class="c-head"><span class="c-no">N° '+esc(m.no)+'</span><span class="c-meta">'+esc(s.zone||'')+(s.de?' · '+esc(s.de):'')+'</span></div><div class="steps">'+steps.map(([x,hh],k)=>'<div class="step'+(k<=i?' ok':'')+(k===i?' now':'')+'"><span class="d" aria-hidden="true"></span><div><b>'+x+'</b>'+(k<=i&&hh?' <span class="muted small">'+hh+'</span>':'')+'</div></div>').join('')+'</div>'+
@@ -920,9 +941,9 @@ async function recStart(){
     MR.ondataavailable=e=>{if(e.data&&e.data.size)ch.push(e.data);};
     MR.onstop=()=>{st.getTracks().forEach(t=>t.stop());clearInterval(recTimer);const dur=Math.max(1,Math.round((Date.now()-recT0)/1000));
       const b=new Blob(ch,{type:MR.mimeType||mt||'audio/mp4'});const fr=new FileReader();fr.onload=()=>{PV.vocal={url:fr.result,mime:(MR.mimeType||mt||'audio/mp4').split(';')[0],dur:Math.min(60,dur)};PV.rec=false;renderPublic();};fr.readAsDataURL(b);};
-    MR.start(1000);recT0=Date.now();PV.rec=true;PV.recSec=0;renderPublic();
+    MR.start(1000);recT0=Date.now();PV.rec=true;PV.micErr=false;PV.recSec=0;renderPublic();
     recTimer=setInterval(()=>{PV.recSec=Math.min(60,Math.floor((Date.now()-recT0)/1000));const t=document.querySelector('.timer');if(t)t.textContent='0:'+pad(Math.min(59,PV.recSec))+' / 1:00';if(PV.recSec>=60)recStop();},250);
-  }catch(e){PV.micErr=true;PV.rec=false;renderPublic();}
+  }catch(e){const n=e&&e.name||'';PV.micErr=e&&e.message==='no'?'app':/NotFound|DevicesNotFound/.test(n)?'nodev':'deny';PV.rec=false;renderPublic();}
 }
 function recStop(){try{if(MR&&MR.state!=='inactive')MR.stop();}catch(e){}}
 async function pubSend(p){
@@ -943,7 +964,7 @@ function renderDest(){
   const d=DST,fin=d.statut==='livree'||d.statut==='annulee';
   app.innerHTML='<div class="hero"><div class="logo">'+brandLogo(56,PUB&&PUB.logo)+'<div class="n" style="font-family:var(--display);font-weight:800;font-size:19px">'+esc(PUB&&PUB.nom||'Teranga Livraison')+'</div></div><h1>'+(d.statut==='livree'?'Colis livré ✅':d.statut==='annulee'?'Course annulée':'Un colis arrive pour vous')+'</h1><p>Course N° '+esc(d.no)+(d.exp?' · de la part de '+esc(d.exp):'')+'</p></div>'+
     (d.cl&&!fin?'<h3>Votre code de livraison</h3><div class="codebig">'+esc(d.cl)+'</div><div class="hint" style="text-align:center">Donnez ce code au livreur seulement quand vous avez le colis en main.</div>':'')+
-    (fin?'':'<h3>Aidez le livreur à vous trouver</h3><div class="card stack">'+(d.apos||DV.sent?'<div class="small">📍 Votre position a été envoyée au livreur. Merci !</div><button class="b b-line" data-a="dPos">Renvoyer ma position</button>':'<button class="b b-go b-big" data-a="dPos"'+(DV.busy?' disabled':'')+'>'+(DV.busy?'<span class="spin"></span> Recherche…':'📍 Envoyer ma position')+'</button><div class="hint">Le téléphone demande l\'autorisation : touchez « Autoriser ».</div>')+'</div>')+
+    (fin?'':'<h3>Aidez le livreur à vous trouver</h3><div class="card stack">'+(d.apos||DV.sent?'<div class="small">📍 Votre position a été envoyée au livreur. Merci !</div><button class="b b-line" data-a="dPos">Renvoyer ma position</button>':'<button class="b b-go b-big" data-a="dPos"'+(DV.busy?' disabled':'')+'>'+(DV.busy?'<span class="spin"></span> Recherche…':'📍 Envoyer ma position')+'</button>'+(GEOERR?geoHelp():'<div class="hint">Le téléphone demande l\'autorisation : touchez « Autoriser ».</div>'))+'</div>')+
     (d.livreur&&!fin?'<h3>Votre livreur</h3><div class="card who"><span>🛵 '+esc(d.livreur.nom)+' · <span class="num" style="font-size:15px">'+telFmt(d.livreur.tel)+'</span></span><a class="b b-line b-sm" href="'+telLink(d.livreur.tel)+'">📞 Appeler</a></div>':'')+
     '<div class="hint" style="text-align:center;margin-top:18px">Avec Teranga Livraison · Seck Apps</div>';
 }
