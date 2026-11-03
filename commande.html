@@ -26,7 +26,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap">
 <style>
-html{-webkit-text-size-adjust:100%}body{margin:0}img{max-width:100%}[hidden]{display:none!important}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{-webkit-text-size-adjust:100%}body{margin:0}img{max-width:100%}[hidden]{display:none!important}
 
 /* Mise en page : une colonne de téléphone. Bandeau bleu nuit en haut (nom de la société, zones), cartes de courses avec une bande de couleur par étape (jaune nouvelle, vert en route, bleu récupéré, orange livré), barre d'onglets en bas pour le capo. */
 :root{
@@ -288,6 +288,7 @@ const rnd=n=>{const a='abcdefghijkmnpqrstuvwxyz23456789';let s='';const b=new Ui
 const uid=()=>rnd(16);
 const pin4=()=>{const b=new Uint8Array(2);crypto.getRandomValues(b);return String(((b[0]<<8)|b[1])%10000).padStart(4,'0');};
 const digits=p=>String(p||'').replace(/\D/g,'');
+function codeOf(v){v=String(v||'').trim();const m=v.match(/[?&](?:livreur|c)=([^&#\s]+)/);if(m)v=decodeURIComponent(m[1]);return v.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40);}
 function tel9(p){let d=digits(p);if(d.startsWith('00221'))d=d.slice(5);else if(d.startsWith('221')&&d.length===12)d=d.slice(3);return d;}
 function waNum(p){let d=digits(p);if(d.startsWith('00'))d=d.slice(2);if(d.length===9&&d[0]==='7')d='221'+d;return d;}
 const telFmt=p=>{const d=waNum(p);const m=d.match(/^221(\d\d)(\d{3})(\d\d)(\d\d)$/);return m?m.slice(1).join(' '):(p||'');};
@@ -809,7 +810,7 @@ function renderAuth(){const a=V.auth,su=a.su;
 }
 function renderMLogin(){const m=V.mlog;if(!m.code)m.code=Q.get('livreur')||lsGet('tl-lastcode','')||'';
   $('app').innerHTML='<div class="start"><div class="logo">'+logo(52)+'<div class="n" style="font-family:var(--display);font-weight:800;font-size:20px">Espace livreur</div></div>'+
-    '<form id="fMLogin" class="card auth">'+(Q.get('livreur')?'':'<label class="f">Code de la société<input id="ml_code" value="'+esc(m.code)+'" autocapitalize="none" placeholder="Ex : seck-livraison" required><span class="hint" style="font-weight:500">C\'est le mot à la fin du lien que le capo vous a envoyé.</span></label>')+
+    '<form id="fMLogin" class="card auth">'+(Q.get('livreur')?'':'<label class="f">Code de la société<input id="ml_code" value="'+esc(m.code)+'" autocapitalize="none" placeholder="Ex : seck-livraison" required><span class="hint" style="font-weight:500">C\'est le mot après « livreur= » dans le lien reçu sur WhatsApp. Vous pouvez aussi coller le lien entier.</span></label>')+
     '<label class="f">Votre numéro<input id="ml_tel" inputmode="tel" value="'+esc(m.tel)+'" placeholder="77 000 00 00" required></label>'+
     '<label class="f">Votre code<input id="ml_pin" class="pinput" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="••••" required></label>'+
     '<div class="err" id="ml_err"></div><button class="b b-go b-big" type="submit" id="ml_btn">Entrer</button></form>'+
@@ -1107,12 +1108,12 @@ document.addEventListener('submit',async e=>{
         if(su){ACC=await rpc('liv_inscription',{p_nom:a.nom.trim(),p_ville:a.ville.trim()});lsSet(K('acc'),ACC);}
         V.auth={su:false,nom:'',ville:'',tel:'',pw:'',pw2:''};startCapo();}
       catch(err){b.disabled=false;b.textContent=su?'Créer mon compte · 7 jours gratuits':'Entrer';say(errMsg(err));}});return;}
-  if(f.id==='fMLogin'){const m=V.mlog;m.code=(Q.get('livreur')||fv('ml_code')).trim().toLowerCase();m.tel=fv('ml_tel');const pin=digits(fv('ml_pin')),say=t=>{$('ml_err').textContent=t;};
+  if(f.id==='fMLogin'){const m=V.mlog;m.code=codeOf(Q.get('livreur')||fv('ml_code'));m.tel=fv('ml_tel');const pin=digits(fv('ml_pin')),say=t=>{$('ml_err').textContent=t;};
     if(!m.code)return say('Écrivez le code de la société');if(tel9(m.tel).length<9)return say('Numéro invalide');if(pin.length<4)return say('Code : 4 chiffres');
     const b=$('ml_btn');b.disabled=true;b.innerHTML='<span class="spin"></span>';
     whenSB(async()=>{try{const v=await mLogin(m.code,tel9(m.tel),pin);if(!v||!v.ok)throw new Error(v&&v.erreur||'Numéro ou code incorrect');
-        MEM={code:m.code,tel:tel9(m.tel),pin};lsSet('tl-mem',MEM);lsSet('tl-lastcode',m.code);setMV(v);startMembre();}
-      catch(err){b.disabled=false;b.textContent='Entrer';say(errMsg(err));}});return;}
+        MEM={code:m.code,tel:tel9(m.tel),pin};lsSet('tl-mem',MEM);lsSet('tl-lastcode',m.code);setMV(v);livHome(m.code);startMembre();}
+      catch(err){b.disabled=false;b.textContent='Entrer';const t=errMsg(err);say(/introuvable/i.test(t)?'Société « '+m.code+' » introuvable. Écrivez le mot qui est après « livreur= » dans le lien reçu sur WhatsApp (ex : seck-livraison).':t);}});return;}
   if(f.id==='fCourse'){const o=readCourseForm();if(o.cli.tel.length<9&&!o.de){toast('Mettez au moins le téléphone du client ou l\'adresse');return;}
     if(f.dataset.id){await doEditCourse(f.dataset.id,o);closeSheet();render();return;}
     const to=fv('f_to');const ok=await doNewCourse(Object.assign(o,{src:fv('f_src')||'tel'}),to);if(ok){closeSheet();V.cf='actives';render();}return;}
@@ -1143,6 +1144,16 @@ document.addEventListener('submit',async e=>{
 document.addEventListener('error',e=>{const t=e.target;if(!t||t.tagName!=='IMG')return;
   if(t.classList.contains('blogo'))t.outerHTML=logo(+t.getAttribute('width')||48);else t.style.visibility='hidden';},true);
 
+
+// ----- icône de l'écran d'accueil : pour un livreur, elle s'ouvre sur l'espace de sa société -----
+function livHome(code){if(!code)return;try{const base=location.href.split(/[?#]/)[0].replace(/(index|commande)\.html$/,''),url=base+'?livreur='+encodeURIComponent(code);
+  if(Q.get('livreur')!==code)history.replaceState(null,'',url);
+  const ic=s=>({src:base+'icon-'+s+'.png',sizes:s+'x'+s,type:'image/png'});
+  const mf={name:'Livraison · Espace livreur',short_name:'Livreur',start_url:url,scope:base,display:'standalone',background_color:'#EDF0F5',theme_color:'#0E2A57',lang:'fr',
+    icons:[ic(192),ic(512),{src:base+'icon-maskable-512.png',sizes:'512x512',type:'image/png',purpose:'maskable'}]};
+  document.querySelectorAll('link[rel="manifest"]').forEach(l=>l.remove());
+  const l=document.createElement('link');l.rel='manifest';l.href='data:application/manifest+json,'+encodeURIComponent(JSON.stringify(mf));document.head.appendChild(l);
+  const t=document.querySelector('meta[name="apple-mobile-web-app-title"]');if(t)t.content='Livreur';}catch(e){}}
 // ===== Démarrage : on choisit l'écran selon le lien =====
 function boot(){
   initSB();
@@ -1156,7 +1167,7 @@ function boot(){
     setInterval(()=>{if(document.visibilityState==='visible'&&MODE==='public'&&!PV.rec&&MINE.some(m=>!m.fin))pubSuivi();},20000);return;
   }
   // lien d'accès d'un livreur ou d'un capo de zone
-  const lc=(Q.get('livreur')||'').toLowerCase();
+  const lc=codeOf(Q.get('livreur')||'');if(lc)livHome(lc);else if(MEM&&!lsGet('tl-auth',null))livHome(MEM.code);
   if(lc&&!(MEM&&MEM.code===lc)){MODE='mlogin';V.mlog.code=lc;render();return;}
   if(lc||(!lsGet('tl-auth',null)&&MEM)){
     if(MV){startMembre();return;}
