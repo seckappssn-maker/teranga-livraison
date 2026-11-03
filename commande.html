@@ -429,7 +429,7 @@ function optim(act,id,arg){const c=S.courses[id],now=Date.now(),me=MV&&MV.me;arg
   if(!c)return;const t=Object.assign({},c.t);
   if(act==='prendre'){c.statut='prise';c.lid=me.id;t.prise=now;}
   if(act==='recup'&&c.statut==='prise'){c.statut='recuperee';t.recup=now;}
-  if(act==='livre'){c.statut='livree';t.livree=now;if(!t.recup)t.recup=now;}
+  if(act==='livre'){c.statut='livree';t.livree=now;if(!t.recup)t.recup=now;if(+arg.prix>0&&!(+c.prix)){c.prix=+arg.prix;c.prixLiv=true;}}
   if(act==='envoyer'){c.lid=arg.lid;if(c.statut==='nouvelle'){c.statut='prise';t.prise=now;}}
   if(act==='annuler')c.statut='annulee';
   if(act==='rendu')c.rendu=true;
@@ -580,11 +580,16 @@ function contactHtml(c,full){
   if(c.note)h+='<div class="small muted">📝 '+esc(c.note)+'</div>';
   return h;
 }
+function prixLivHtml(c){const ts=(S.ent.tarifs||[]).filter(t=>t.z===c.zone&&+t.prix>0).map(t=>+t.prix),mn=ts.length?Math.min.apply(null,ts):0,bas=mn&&+c.prix<mn;
+  const l=lv(c.lid),p=c.cli&&c.cli.tel,msg='Bonjour, c\'est '+(S.ent.nom||'Teranga Livraison')+'. Pour votre course N° '+(c.no||'')+(l?' avec '+l.nom:'')+', le livreur a noté '+F(c.prix)+'. C\'est bien ce que vous avez payé ? Merci !';
+  return '<div class="note"'+(bas?' style="border-color:var(--bad)"':'')+'>✍️ Prix noté par le livreur : <b>'+F(c.prix)+'</b>'+(bas?' · <b style="color:var(--bad)">⚠️ moins que vos tarifs ('+F(mn)+')</b>':'')+
+    (p?'<div style="margin-top:6px"><a class="b b-line b-sm" target="_blank" rel="noopener" href="'+waLink(p,msg)+'">💬 Vérifier avec le client</a></div>':'')+'</div>';}
 function courseCard(c,ctx){
   const l=lv(c.lid);const st=ST[c.statut]||ST.nouvelle;const open=c.statut!=='annulee'&&c.statut!=='livree';
   let h='<article class="course s-'+c.statut+'"><div class="c-head"><span class="c-no">N° '+(c.no||'…')+'</span><span class="c-meta">'+(c.vocal?'🎤 Vocal':SRC[c.src]||'')+' · '+hhmm(c.t&&c.t.cree)+(zones().length>1&&!V.zf?' · '+esc(c.zone):'')+'</span><span class="pill '+st.cls+'">'+st.t+'</span></div>';
   h+='<div style="font-weight:800">'+(c.type==='personne'?'🛵 Transport de personne':'📦 Colis')+'</div>'+routeHtml(c)+vocalHtml(c)+moneyHtml(c,ctx!=='capo')+contactHtml(c,open);
   if(ctx==='capo'){
+    if(c.prixLiv)h+=prixLivHtml(c);
     if(c.cl&&open)h+='<div class="small">🔐 Code de livraison : <b class="code">'+esc(c.cl)+'</b> <span class="muted">(celui qui reçoit le donne au livreur)</span></div>';
     if(l)h+='<div class="who"><span>🛵 <b>'+esc(l.nom)+'</b>'+(c.statut==='livree'?' · livré à '+hhmm(c.t.livree):c.statut==='recuperee'?' · récupéré à '+hhmm(c.t.recup):c.statut==='prise'?' · parti à '+hhmm(c.t.prise):'')+'</span>'+(c.photo?'<button class="b b-line b-sm" data-a="photo" data-id="'+c.id+'">📷 Photo</button>':'')+'</div>';
     h+='<div class="row">';
@@ -768,10 +773,16 @@ function renderLivreur(){
     '<h3>Ma journée</h3><div class="card"><div class="ca-row"><span>Courses livrées</span><b>'+k.cs.length+'</b></div><div class="ca-row"><span>Total des livraisons</span><b>'+F(k.total)+'</b></div>'+(k.march?'<div class="ca-row"><span>Marchandise encaissée</span><b>'+F(k.march)+'</b></div>':'')+'<div class="ca-row"><span>Ma part</span><b>'+(p.t==='mois'?'Salaire du mois':F(k.partL))+'</b></div><div class="due"><span>'+(k.aVerser>=0?'À verser au patron':'Le patron me doit')+'</span><span class="v">'+F(Math.abs(k.aVerser))+'</span></div>'+(k.v?'<div class="pill p-prise" style="margin-top:8px">Versé ✓</div>':'')+'</div>'+
     pushCard()+'<div style="margin-top:16px" class="stack"><button class="b b-line" data-a="mlogout">Sortir</button></div>';
 }
+function prixBlock(c){const ts=(S.ent.tarifs||[]).filter(t=>t.z===c.zone&&+t.prix>0);const seen={};
+  const opts=ts.filter(t=>!seen[t.prix]&&(seen[t.prix]=1)).map(t=>[String(t.prix),F(t.prix)+' · '+esc(t.lieu)]);
+  return grp('Prix de la course (combien le client a payé ?)',chips('lv_px',opts.concat([['autre','Autre prix'],['patron','Il paie au patron']]),''))+
+    '<label class="f" id="lv_autrew" hidden>Prix (F)<input id="lv_prix" inputmode="numeric" placeholder="Ex : 1500"></label>'+
+    '<div class="note">Le client voit ce prix sur son suivi, et le patron peut l\'appeler pour vérifier.</div>';}
 function livreSheet(c){
   const need=!!c.codeReq,ph=!!(S.ent.photoLiv);
   openSheet('Livrer N° '+(c.no||''),'<form id="fLivre" class="stack" data-id="'+esc(c.id)+'">'+
     (+c.march||(c.paie==='dest'&&+c.prix)?'<div class="cod">💰 À encaisser : '+F((c.paie==='dest'?+c.prix:0)+(+c.march||0))+(+c.march?' (dont '+F(c.march)+' pour le vendeur)':'')+'</div>':'')+
+    (+c.prix?'':prixBlock(c))+
     (need?'<label class="f">Code de celui qui reçoit<input id="lv_code" class="pinput" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••" required></label><div class="hint">Demandez le code à la personne quand elle a le colis en main.</div>':'')+
     '<div class="f"><span>'+(ph?'Photo du colis livré (obligatoire)':'Photo du colis livré (facultatif)')+'</span><label class="b b-line">📷 Prendre la photo<input id="lv_photo" type="file" accept="image/*" capture="environment" hidden></label></div><img id="lv_prev" class="photo-prev" alt="Photo du colis" hidden>'+
     '<button class="b b-done b-big" type="submit">✅ Confirmer la livraison</button></form>');
@@ -896,6 +907,7 @@ function suiviCard(m){
   const steps=[['Demande reçue',hhmm(T.cree)],['Un livreur arrive',hhmm(T.prise)],[s.type==='personne'?'Vous êtes en route':'Colis récupéré',hhmm(T.recup)],[s.type==='personne'?'Arrivé':'Livré',hhmm(T.livree)]];
   return '<div class="card stack"><div class="c-head"><span class="c-no">N° '+esc(m.no)+'</span><span class="c-meta">'+esc(s.zone||'')+(s.de?' · '+esc(s.de):'')+'</span></div><div class="steps">'+steps.map(([x,hh],k)=>'<div class="step'+(k<=i?' ok':'')+(k===i?' now':'')+'"><span class="d" aria-hidden="true"></span><div><b>'+x+'</b>'+(k<=i&&hh?' <span class="muted small">'+hh+'</span>':'')+'</div></div>').join('')+'</div>'+
     (s.livreur&&s.statut!=='livree'?'<div class="who"><span>🛵 '+esc(s.livreur.nom)+' · <span class="num" style="font-size:15px">'+telFmt(s.livreur.tel)+'</span></span><a class="b b-line b-sm" href="'+telLink(s.livreur.tel)+'">📞 Appeler</a></div>':'')+
+    (+s.prix?'<div class="small">💵 Prix de la course : <b>'+F(s.prix)+'</b>'+(s.statut==='livree'&&PUB&&PUB.tel?' · <a href="'+waLink(PUB.tel,'Bonjour, pour ma course N° '+m.no+' le prix noté est '+F(s.prix)+', mais ce n\'est pas ce que j\'ai payé.')+'" target="_blank" rel="noopener">Pas le bon prix ?</a>':'')+'</div>':'')+
     (m.cl&&s.statut!=='livree'?'<div class="small">🔐 Code de livraison : <b class="code">'+esc(m.cl)+'</b></div>':'')+'</div>';
 }
 // enregistrement du vocal (débit bas pour un petit fichier)
@@ -1024,7 +1036,7 @@ document.addEventListener('click',async e=>{
   if(a==='dispo'){const me=lv(MV.me.id)||MV.me;await mdo('dispo','',{v:!me.dispo});return;}
   if(a==='take'){await mdo('prendre',id,{},'Course pour vous ✓');buzz();return;}
   if(a==='mstep'){await mdo('recup',id,{},'Colis récupéré');return;}
-  if(a==='mlivre'){const c=crs(id);if(!c)return;if(c.codeReq||S.ent.photoLiv)return livreSheet(c);
+  if(a==='mlivre'){const c=crs(id);if(!c)return;if(c.codeReq||S.ent.photoLiv||!(+c.prix))return livreSheet(c);
     if(el.dataset.arm!=='1'){el.dataset.arm='1';el.textContent='Sûr ? Touchez encore pour confirmer';return;}await mdo('livre',id,{},'Course livrée ✓');return;}
   // page clients
   if(a==='pmode'){PV.mode=PV.mode===el.dataset.v?'':el.dataset.v;PV.done=null;renderPublic();return;}
@@ -1050,6 +1062,7 @@ document.addEventListener('change',e=>{
   if(t.name==='e_code'){put('set','ent',{codeLiv:t.value});toast('Réglage enregistré');return;}
   if(t.id==='e_photo'){put('set','ent',{photoLiv:t.checked});toast('Réglage enregistré');return;}
   if(t.name==='e_voc'){put('set','ent',{vocalJours:+t.value});toast('Réglage enregistré');return;}
+  if(t.name==='lv_px'){const w=$('lv_autrew');if(w)w.hidden=t.value!=='autre';if(t.value==='autre'&&$('lv_prix'))$('lv_prix').focus();return;}
   if(t.name==='p_city'){PV.city=t.value;renderKeepPub();return;}
 });
 document.addEventListener('input',e=>{const t=e.target;
@@ -1097,8 +1110,10 @@ document.addEventListener('submit',async e=>{
     await doDepense({lid,zone:l?l.zone:(isZoneMgr()?MV.me.zone:(V.zf||zones()[0])),date:fv('d_date')||today(),type:fv('d_type')||'autre',montant:m,note:fv('d_note').trim()});closeSheet();V.cm=(fv('d_date')||today()).slice(0,7);render();return;}
   if(f.id==='fCode'){const c=fv('c_code').trim().toLowerCase();try{const r=await rpc('liv_set_code',{p_code:c});ACC.code=r;lsSet(K('acc'),ACC);closeSheet();render();toast('Lien changé');}catch(err){$('c_err').textContent=errMsg(err);}return;}
   if(f.id==='fLivre'){const c=crs(f.dataset.id);if(!c)return;const code=digits(fv('lv_code')),im=$('lv_prev'),photo=im&&im.dataset.u?im.dataset.u.split(',')[1]:'';
+    let prix=0;if(!(+c.prix)){const px=fv('lv_px');if(!px){toast('Choisissez le prix de la course');return;}
+      if(px==='autre'){prix=Math.round(num(fv('lv_prix')));if(prix<=0){toast('Écrivez le prix');return;}}else if(px!=='patron')prix=+px;}
     if(c.codeReq&&code.length!==4){toast('Le code a 4 chiffres');return;}if(S.ent.photoLiv&&!photo){toast('Prenez la photo du colis');return;}
-    closeSheet();await mdo('livre',c.id,{code,photo},'Course livrée ✓');return;}
+    closeSheet();await mdo('livre',c.id,{code,photo,prix},'Course livrée ✓');return;}
   if(f.id==='fClient'){const tel=tel9(fv('k_tel'));if(tel.length<9){toast('Écrivez votre numéro (9 chiffres)');return;}
     const typ=fv('k_type');const tar=(PUB.tarifs||[]).find(t=>t.z===PV.city&&(typ==='personne'?/taxi/i.test(t.lieu):!/taxi/i.test(t.lieu)));
     pubSend({zone:PV.city,type:typ,cli:{tel},de:fv('k_de').trim(),a:fv('k_a').trim(),dest:{tel:tel9(fv('k_dest'))},paie:fv('k_paie'),mode:fv('k_mode'),march:Math.round(num(fv('k_march'))),prix:tar?tar.prix:0,depos:PV.pos||undefined});return;}
