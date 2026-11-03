@@ -1,0 +1,1144 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Teranga Livraison</title>
+<meta name="description" content="Courses, livreurs à moto, caisse du jour et dépenses des motos dans une seule app. Pour les sociétés de livraison au Sénégal. 7 jours gratuits.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Teranga Livraison">
+<meta property="og:title" content="Teranga Livraison · Gérez vos livreurs à moto">
+<meta property="og:description" content="Courses, livreurs, caisse du jour et motos dans une seule app. Les clients commandent par lien, même avec un vocal. 7 jours gratuits.">
+<meta property="og:url" content="https://seckappssn-maker.github.io/teranga-livraison/">
+<meta property="og:image" content="https://seckappssn-maker.github.io/teranga-livraison/copertina.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://seckappssn-maker.github.io/teranga-livraison/copertina.png">
+<meta name="theme-color" content="#0E2A57">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Livraison">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap">
+<style>
+html{-webkit-text-size-adjust:100%}body{margin:0}img{max-width:100%}[hidden]{display:none!important}
+
+/* Mise en page : une colonne de téléphone. Bandeau bleu nuit en haut (nom de la société, zones), cartes de courses avec une bande de couleur par étape (jaune nouvelle, vert en route, bleu récupéré, orange livré), barre d'onglets en bas pour le capo. */
+:root{
+  --bg:#EDF0F5; --surface:#FFFFFF; --sunk:#E2E7EF; --ink:#0F1B2E; --muted:#56627A; --line:#D3DAE5;
+  --brand:#0E2A57; --brand-ink:#FFFFFF; --brand-soft:#C9D6EE;
+  --sun:#FFC21A; --sun-ink:#2A1E00; --sun-soft:#FFF1C7;
+  --go:#0F7A4F; --go-soft:#DBF0E6; --pick:#1F5BD6; --pick-soft:#E0E9FB;
+  --done:#C9561A; --done-soft:#FBE6D8; --bad:#B42318; --bad-soft:#FBE2DF; --on:#FFFFFF;
+  --display:"Bricolage Grotesque",ui-rounded,system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0B121E; --surface:#131D2D; --sunk:#1A2640; --ink:#E8EDF5; --muted:#9AA7BC; --line:#263349;
+  --brand:#10244A; --brand-ink:#EAF0FA; --brand-soft:#8FA6CF;
+  --sun:#FFC94A; --sun-ink:#241A00; --sun-soft:#3A3010;
+  --go:#46C48C; --go-soft:#12352A; --pick:#7DA4FF; --pick-soft:#172848;
+  --done:#FF9A55; --done-soft:#3A2312; --bad:#F07A6E; --bad-soft:#3A1C19; --on:#0B121E; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B121E; --surface:#131D2D; --sunk:#1A2640; --ink:#E8EDF5; --muted:#9AA7BC; --line:#263349;
+  --brand:#10244A; --brand-ink:#EAF0FA; --brand-soft:#8FA6CF;
+  --sun:#FFC94A; --sun-ink:#241A00; --sun-soft:#3A3010;
+  --go:#46C48C; --go-soft:#12352A; --pick:#7DA4FF; --pick-soft:#172848;
+  --done:#FF9A55; --done-soft:#3A2312; --bad:#F07A6E; --bad-soft:#3A1C19; --on:#0B121E; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.4;font-variant-numeric:tabular-nums}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--brand)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--pick);outline-offset:2px}
+.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:640px;margin:0 auto}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+h2{font-size:22px;font-weight:800}
+h3{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-family:var(--body);margin:22px 0 10px}
+.muted{color:var(--muted)} .small{font-size:14px}
+/* bandeau */
+.top{position:relative;z-index:5;background:var(--brand);color:var(--brand-ink)}
+.top .wrap{padding-block:10px 12px;display:flex;flex-direction:column;gap:10px}
+.demo{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px;color:var(--brand-soft)}
+.demo b{font-weight:700;margin-right:2px}
+.demo button{border:1px solid color-mix(in srgb,var(--brand-ink) 35%,transparent);background:transparent;color:var(--brand-ink);border-radius:99px;padding:5px 12px;font-size:13px;font-weight:700}
+.demo button[aria-pressed="true"]{background:var(--sun);color:var(--sun-ink);border-color:var(--sun)}
+.brandrow{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.logo{display:flex;align-items:center;gap:10px;min-width:0}
+.logo svg{flex:none;border-radius:23%;box-shadow:0 0 0 1.5px rgba(255,255,255,.22),0 3px 12px rgba(0,0,0,.25)}
+.logo .n{font-family:var(--display);font-weight:800;font-size:21px;line-height:1.1}
+.logo .s{font-size:13px;color:var(--brand-soft)}
+.zones{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.zones button{border:0;background:color-mix(in srgb,var(--brand-ink) 12%,transparent);color:var(--brand-ink);border-radius:99px;padding:7px 14px;font-weight:700;font-size:14px;white-space:nowrap}
+.zones button[aria-pressed="true"]{background:var(--brand-ink);color:var(--brand)}
+main{padding-block:14px 110px}
+/* boutons */
+.b{border:0;border-radius:14px;padding:14px 16px;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;text-align:center;text-decoration:none;line-height:1.2}
+.b-sun{background:var(--sun);color:var(--sun-ink)}
+.b-go{background:var(--go);color:var(--on)} .b-pick{background:var(--pick);color:var(--on)} .b-done{background:var(--done);color:var(--on)}
+.b-line{background:var(--surface);border:1.5px solid var(--line);color:var(--ink)}
+.b-soft{background:var(--sunk);color:var(--ink)}
+.b-bad{background:var(--bad-soft);color:var(--bad)}
+.b-big{padding:18px 16px;font-size:19px;border-radius:16px}
+.b-sm{padding:9px 12px;font-size:14px;border-radius:11px;width:auto;display:inline-flex}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row>.b{flex:1 1 140px;width:auto}
+.stack{display:flex;flex-direction:column;gap:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+/* pastilles */
+.pill{display:inline-block;padding:4px 10px;border-radius:99px;font-size:13px;font-weight:800;white-space:nowrap}
+.p-nouvelle{background:var(--sun-soft);color:var(--ink)} .p-off{background:var(--sunk);color:var(--muted)} .p-prise{background:var(--go-soft);color:var(--go)}
+.p-recuperee{background:var(--pick-soft);color:var(--pick)} .p-livree{background:var(--done-soft);color:var(--done)} .p-annulee{background:var(--bad-soft);color:var(--bad)}
+/* cartes de course */
+.course{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 14px 14px 18px;position:relative;overflow:hidden;display:flex;flex-direction:column;gap:10px}
+.course::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--stripe)}
+.s-nouvelle{--stripe:var(--sun)} .s-prise{--stripe:var(--go)} .s-recuperee{--stripe:var(--pick)} .s-livree{--stripe:var(--done)} .s-annulee{--stripe:var(--bad);opacity:.7}
+.c-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.c-no{font-family:var(--display);font-weight:800;font-size:19px}
+.c-meta{font-size:13px;color:var(--muted);flex:1;min-width:0}
+.route{display:flex;flex-direction:column;gap:6px;font-size:15.5px}
+.route div{display:flex;gap:8px;align-items:baseline;min-width:0}
+.route span.k{flex:none;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);width:62px}
+.route .v{min-width:0;overflow-wrap:anywhere}
+.money{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:14.5px;color:var(--muted)}
+.money b{color:var(--ink)}
+.cod{background:var(--sun-soft);color:var(--ink);border-radius:12px;padding:9px 12px;font-weight:700;font-size:15px}
+.who{font-size:14.5px;display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center}
+.vocal{background:var(--sunk);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;font-size:14px;font-weight:700}
+.vocal audio{width:100%;height:40px}
+.list{display:flex;flex-direction:column;gap:10px}
+.empty{padding:26px 16px;text-align:center;color:var(--muted);background:var(--surface);border:1.5px dashed var(--line);border-radius:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px}
+.filters{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;margin-block:12px}
+.filters button{border:1.5px solid var(--line);background:var(--surface);border-radius:99px;padding:8px 13px;font-weight:700;font-size:14px;white-space:nowrap}
+.filters button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.tile .k{font-size:12.5px;color:var(--muted);font-weight:600}
+.tile .v{font-family:var(--display);font-weight:800;font-size:20px;margin-top:2px}
+/* livreurs */
+.lv{display:flex;gap:12px;align-items:center}
+.av{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:800;background:var(--sunk);position:relative}
+.av i{position:absolute;right:-1px;bottom:-1px;width:14px;height:14px;border-radius:50%;border:2.5px solid var(--surface);background:var(--muted)}
+.av i.on{background:var(--go)}
+.lv .main{flex:1;min-width:0}
+.lv .t{font-weight:800}
+.lv .s{font-size:13.5px;color:var(--muted)}
+.code{font-family:var(--display);font-weight:800;letter-spacing:.18em}
+/* caisse */
+.ca-row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid var(--line);font-size:15px}
+.ca-row:first-of-type{border-top:0}
+.ca-row b{white-space:nowrap}
+.due{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--sunk);border-radius:12px;padding:12px;margin-top:6px}
+.due .v{font-family:var(--display);font-weight:800;font-size:24px}
+.daynav{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.daynav b{font-family:var(--display);font-size:19px}
+/* formulaires */
+.f{display:flex;flex-direction:column;gap:5px;font-size:14px;font-weight:700;color:var(--muted);min-width:0}
+input,select,textarea{background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:12px;font-size:16px;width:100%;min-width:0;color:var(--ink)}
+textarea{min-height:70px;resize:vertical}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chips label{position:relative}
+.chips input{position:absolute;opacity:0;width:1px;height:1px}
+.chips span{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--line);background:var(--surface);border-radius:12px;padding:11px 14px;font-weight:800;font-size:15px;color:var(--ink);cursor:pointer}
+.chips input:checked+span{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+.chips input:focus-visible+span{outline:3px solid var(--pick);outline-offset:2px}
+.sw{display:flex;align-items:center;justify-content:space-between;gap:12px;font-weight:700}
+.note{background:var(--sun-soft);color:var(--ink);border-radius:12px;padding:12px 14px;font-size:14.5px}
+.note.blue{background:var(--pick-soft)}
+/* onglets du bas */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabs .wrap{display:grid;grid-template-columns:repeat(4,1fr)}
+.tabs button{border:0;background:none;padding:9px 4px 10px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12.5px;font-weight:700;color:var(--muted);position:relative}
+.tabs button span.i{font-size:21px;line-height:1}
+.tabs button[aria-current="page"]{color:var(--ink)}
+.tabs button[aria-current="page"]::after{content:"";position:absolute;top:0;left:28%;right:28%;height:3px;border-radius:0 0 3px 3px;background:var(--sun)}
+.badge{position:absolute;top:4px;left:calc(50% + 6px);min-width:19px;height:19px;padding:0 5px;border-radius:99px;background:var(--bad);color:var(--on);font-size:11.5px;font-weight:800;display:grid;place-items:center}
+/* feuille du bas */
+.sheet-bg{position:fixed;inset:0;z-index:20;background:rgba(6,12,24,.55);display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--bg);width:100%;max-width:640px;max-height:92%;overflow:auto;border-radius:20px 20px 0 0;padding-top:16px;padding-bottom:calc(22px + env(safe-area-inset-bottom,0px))}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:40;background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:99px;font-weight:700;font-size:15px;max-width:calc(100% - 32px);text-align:center}
+/* livreur */
+.dispo{display:flex;align-items:center;justify-content:space-between;gap:12px;border-radius:16px;padding:14px 16px;font-weight:800;font-size:18px;border:0;width:100%;text-align:left}
+.dispo.on{background:var(--go);color:var(--on)} .dispo.off{background:var(--sunk);color:var(--ink)}
+.dispo small{display:block;font-weight:600;font-size:13.5px;opacity:.85}
+.knob{flex:none;width:58px;height:34px;border-radius:99px;background:color-mix(in srgb,currentColor 25%,transparent);position:relative}
+.knob::after{content:"";position:absolute;top:4px;left:4px;width:26px;height:26px;border-radius:50%;background:currentColor;transition:transform .15s}
+.dispo.on .knob::after{transform:translateX(24px)}
+/* client */
+.hero{background:var(--brand);color:var(--brand-ink);border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:8px}
+.hero h1{font-size:28px;font-weight:800;line-height:1.1}
+.hero p{margin:0;color:var(--brand-soft)}
+.big4{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.big4 .b{flex-direction:column;padding:18px 10px;font-size:16px;border-radius:18px;min-height:104px}
+.big4 .b .i{font-size:30px;line-height:1}
+.big4 .b small{font-weight:600;font-size:13px;opacity:.85}
+.recbtn{width:132px;height:132px;border-radius:50%;border:0;margin:6px auto;display:grid;place-items:center;background:var(--bad);color:var(--on);font-weight:800;font-size:15px;box-shadow:0 0 0 10px var(--bad-soft)}
+.recbtn.on{animation:pulse 1.2s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 18px var(--bad-soft)}}
+@media (prefers-reduced-motion:reduce){.recbtn.on{animation:none}.knob::after{transition:none}}
+.timer{text-align:center;font-family:var(--display);font-weight:800;font-size:26px}
+.steps{display:flex;flex-direction:column;gap:0}
+.step{display:flex;gap:12px;align-items:flex-start;padding-bottom:12px;position:relative}
+.step .d{flex:none;width:22px;height:22px;border-radius:50%;border:3px solid var(--line);background:var(--surface);margin-top:1px;z-index:1}
+.step:not(:last-child)::after{content:"";position:absolute;left:10px;top:22px;bottom:0;width:3px;background:var(--line)}
+.step.ok .d{background:var(--go);border-color:var(--go)}
+.step.ok:not(:last-child)::after{background:var(--go)}
+.step.now b{color:var(--go)}
+.num{font-family:var(--display);font-weight:800;font-size:19px;letter-spacing:.03em;user-select:all}
+.hint{font-size:13.5px;color:var(--muted)}
+/* photo de profil et couverture de l'abonné */
+.blogo{flex:none;border-radius:50%;object-fit:cover;background:var(--surface);box-shadow:0 0 0 2px var(--brand-ink)}
+.cover{position:relative;width:100%;aspect-ratio:16/9;max-height:240px;border-radius:20px;overflow:hidden;background:var(--brand)}
+.cover>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cover::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 35%,rgba(0,0,0,.72) 100%)}
+.cover-in{position:absolute;left:14px;right:14px;bottom:12px;z-index:1;display:flex;align-items:center;gap:12px;color:#fff;min-width:0}
+.cover-in b{display:block;font-family:var(--display);font-size:23px;line-height:1.15;text-shadow:0 1px 4px rgba(0,0,0,.5);overflow-wrap:anywhere}
+.cover-in span{font-size:14px;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.cover-in .blogo{box-shadow:0 0 0 3px #fff}
+.ip{position:relative;padding-bottom:32px}
+.ip-cover{display:grid;place-items:center;width:100%;aspect-ratio:16/7;border-radius:14px;overflow:hidden;border:1.5px dashed var(--line);background:var(--bg);color:var(--muted);font-weight:700;cursor:pointer}
+.ip-cover img,.ip-logo img{width:100%;height:100%;object-fit:cover}
+.ip-logo{position:absolute;left:14px;bottom:0;width:76px;height:76px;border-radius:50%;overflow:hidden;display:grid;place-items:center;border:3px solid var(--surface);background:var(--sunk);box-shadow:0 0 0 1.5px var(--line);color:var(--muted);font-size:12.5px;font-weight:700;cursor:pointer;text-align:center}
+.vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* compléments de la version en ligne */
+html,body{min-height:100%}
+.tabs .wrap{grid-template-columns:repeat(var(--ntabs,5),1fr)}
+.banner{display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap;background:var(--sun-soft);color:var(--ink);border-radius:14px;padding:10px 14px;font-size:14.5px;font-weight:600;margin-bottom:12px}
+.banner.blue{background:var(--pick-soft)}
+.banner.red{background:var(--bad-soft);color:var(--bad)}
+.net{position:fixed;left:0;right:0;top:0;z-index:30;text-align:center;font-size:13px;font-weight:800;padding:calc(4px + env(safe-area-inset-top,0px)) 12px 5px;background:var(--bad);color:var(--on)}
+.net.sync{background:var(--pick)}
+.start{display:flex;flex-direction:column;gap:12px;padding-top:8px}
+.start .hero h1{font-size:30px}
+.auth{display:flex;flex-direction:column;gap:12px}
+.err{color:var(--bad);font-weight:700;font-size:14.5px;min-height:1.2em}
+.seg2{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--sunk);padding:5px;border-radius:14px}
+.seg2 button{border:0;border-radius:10px;padding:11px 8px;font-weight:800;background:transparent;color:var(--muted)}
+.seg2 button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:15px}
+.kv:first-child{border-top:0}
+.kv b{text-align:right}
+.codebig{font-family:var(--display);font-weight:800;font-size:34px;letter-spacing:.3em;text-align:center;padding:10px;border-radius:14px;background:var(--go-soft);color:var(--go)}
+.pinput{font-size:28px;text-align:center;letter-spacing:.35em;font-family:var(--display);font-weight:800}
+.photo-prev{width:100%;max-height:260px;object-fit:cover;border-radius:14px;display:block}
+.month{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.month b{font-family:var(--display);font-size:19px;text-transform:capitalize}
+.rep td,.rep th{padding:7px 6px;text-align:right;font-size:14px;white-space:nowrap;border-top:1px solid var(--line)}
+.rep th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;border-top:0}
+.rep td:first-child,.rep th:first-child{text-align:left;white-space:normal}
+.rep{width:100%;border-collapse:collapse}
+.tbl{overflow-x:auto;margin-inline:-4px}
+.chipbtn{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--line);background:var(--surface);border-radius:99px;padding:6px 11px;font-size:13.5px;font-weight:700;color:var(--ink);text-decoration:none}
+.chipbtn.go{border-color:var(--go);color:var(--go)}
+.linkbox{background:var(--sunk);border-radius:12px;padding:10px 12px;font-size:14px;font-weight:700;overflow-wrap:anywhere;user-select:all}
+.spin{display:inline-block;width:18px;height:18px;border:3px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .8s linear infinite;vertical-align:-3px}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+.locked{text-align:center;display:flex;flex-direction:column;gap:12px;padding-top:20px}
+.wolof{font-size:12.5px;font-weight:600;opacity:.85}
+.big4 .b[aria-pressed="true"]{outline:3px solid var(--brand);outline-offset:2px;box-shadow:0 6px 18px rgba(14,42,87,.18)}
+.big4 .b[aria-pressed="true"].b-line{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+
+</style>
+</head>
+<body>
+<div class="top" id="top"></div>
+<main class="gut"><div class="wrap" id="app"><div style="padding:60px 0;text-align:center"><span class="spin"></span></div></div></main>
+<div id="tabs"></div>
+<div id="sheetRoot"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+/* ======================================================================
+   Teranga Livraison · Seck Apps
+   Un seul fichier pour : capo (compte connecté), capo de zone et livreurs
+   (numéro + code), page des clients (commande.html) et page de celui qui
+   reçoit le colis. Les données sont dans Supabase (tables liv_).
+   ====================================================================== */
+'use strict';
+const SUPA_URL='https://ncsjgmkrsvtwklfrdbgy.supabase.co', SUPA_KEY='sb_publishable_oDE4BbU6J3RTnce1Oo91cQ_hokWgh0U';
+const MAIL_DOM='@terangalivraison.app', SUPPORT='778790006';
+const SITE='https://seckappssn-maker.github.io/teranga-livraison/';
+const PUSH_PUB='BLcHXOxXIRWkIBKizjrAQ0pRpNURUxUGiIlzYgHCGH-aAKLeiGsoL_thiuzOrPAUaF6lWhgOtBFTajqAcmO6sB8';
+const PAGE=window.TL_PAGE||'app';
+const Q=new URLSearchParams(location.search);
+
+// ===== outils =====
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const today=()=>iso(new Date());
+const dayOf=t=>t?iso(new Date(+t)):'';
+const hhmm=t=>{if(!t)return '';const d=new Date(+t);return pad(d.getHours())+':'+pad(d.getMinutes());};
+const fdate=s=>{if(!s)return '';const [y,m,d]=s.split('-');if(s===today())return "Aujourd'hui";const y2=new Date();y2.setDate(y2.getDate()-1);if(s===iso(y2))return 'Hier';return d+'/'+m+'/'+y;};
+const fdateL=s=>{if(!s)return '';const [y,m,d]=String(s).slice(0,10).split('-');return d+'/'+m+'/'+y;};
+const F=n=>Math.round(n||0).toLocaleString('fr-FR').replace(/[\s\u202f\u00a0]/g,'\u00a0')+'\u00a0F';
+const num=v=>{const n=parseFloat(String(v==null?'':v).replace(/\s/g,'').replace(',','.'));return isNaN(n)?0:n;};
+const rnd=n=>{const a='abcdefghijkmnpqrstuvwxyz23456789';let s='';const b=new Uint8Array(n);(crypto||window.msCrypto).getRandomValues(b);for(const x of b)s+=a[x%a.length];return s;};
+const uid=()=>rnd(16);
+const pin4=()=>{const b=new Uint8Array(2);crypto.getRandomValues(b);return String(((b[0]<<8)|b[1])%10000).padStart(4,'0');};
+const digits=p=>String(p||'').replace(/\D/g,'');
+function tel9(p){let d=digits(p);if(d.startsWith('00221'))d=d.slice(5);else if(d.startsWith('221')&&d.length===12)d=d.slice(3);return d;}
+function waNum(p){let d=digits(p);if(d.startsWith('00'))d=d.slice(2);if(d.length===9&&d[0]==='7')d='221'+d;return d;}
+const telFmt=p=>{const d=waNum(p);const m=d.match(/^221(\d\d)(\d{3})(\d\d)(\d\d)$/);return m?m.slice(1).join(' '):(p||'');};
+const waLink=(p,t)=>'https://wa.me/'+waNum(p)+(t?'?text='+encodeURIComponent(t):'');
+const waShare=t=>'https://wa.me/?text='+encodeURIComponent(t);
+const telLink=p=>'tel:+'+waNum(p);
+const posOk=p=>p&&isFinite(p.lat)&&isFinite(p.lng);
+const mapLink=(q,z,pos)=>posOk(pos)?'https://www.google.com/maps/dir/?api=1&destination='+pos.lat+','+pos.lng:'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q+(z?', '+z:'')+', Sénégal');
+const sum=(a,f)=>a.reduce((s,x)=>s+(f(x)||0),0);
+const initials=n=>String(n||'?').split(/\s+/).map(x=>x[0]||'').join('').slice(0,2).toUpperCase();
+const imgOk=u=>/^(https:\/\/|data:image\/)/.test(u||'');
+function lsGet(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch(e){return d;}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true;}catch(e){return false;}}
+function lsDel(k){try{localStorage.removeItem(k);}catch(e){}}
+let toastT=null;
+function toast(m){clearTimeout(toastT);let t=document.querySelector('.toast');if(!t){t=document.createElement('div');t.className='toast';t.setAttribute('role','status');document.body.appendChild(t);}t.textContent=m;toastT=setTimeout(()=>t.remove(),3000);}
+function copy(txt,okMsg){const done=()=>toast(okMsg||'Copié');try{navigator.clipboard.writeText(txt).then(done,fb);}catch(e){fb();}
+  function fb(){const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');done();}catch(e){toast('Sélectionnez le texte et copiez-le');}ta.remove();}}
+function buzz(){try{navigator.vibrate&&navigator.vibrate([200,80,200]);}catch(e){}}
+function isNet(e){const m=String(e&&e.message||e||'');return !navigator.onLine||/fetch|network|Failed|Load failed|NetworkError|timeout/i.test(m);}
+function errMsg(e){const m=String(e&&e.message||e||'');if(isNet(e))return 'Pas d\'internet : réessayez';
+  if(/Invalid login|credentials/i.test(m))return 'Numéro ou mot de passe incorrect';
+  if(/already registered|already been registered|exists/i.test(m))return 'Ce numéro a déjà un compte : touchez « Entrer »';
+  if(/Password should be/i.test(m))return 'Mot de passe : 6 caractères minimum';
+  return m.replace(/^.*?ERROR:\s*/,'')||'Erreur';}
+function readPhoto(f,cb,max,q){const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,max/Math.max(im.width,im.height));const c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);cb(c.toDataURL('image/jpeg',q||.8));};im.onerror=()=>toast('Cette image ne s\'ouvre pas');im.src=fr.result;};fr.readAsDataURL(f);}
+function dataUrlBlob(u){const a=u.split(','),m=a[0].match(/:(.*?);/)[1],b=atob(a[1]);let n=b.length;const x=new Uint8Array(n);while(n--)x[n]=b.charCodeAt(n);return new Blob([x],{type:m});}
+
+// ===== Supabase =====
+let SB=null;
+function initSB(){if(SB)return SB;if(!window.supabase)return null;SB=window.supabase.createClient(SUPA_URL,SUPA_KEY,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'tl-auth'}});return SB;}
+function whenSB(cb){const t0=Date.now();(function w(){if(initSB())return cb();if(Date.now()-t0>9000){NETMSG='Pas d\'internet : l\'app s\'ouvre quand le réseau revient';render();return;}setTimeout(w,150);})();}
+async function rpc(fn,args){const r=await SB.rpc(fn,args||{});if(r.error)throw r.error;return r.data;}
+
+// ===== état général =====
+let MODE='start';           // start · auth · capo · demo · membre · public · dest · locked
+let USER=null, ACC=null, NETMSG='';
+const V={tab:'courses',zf:'',cf:'actives',cd:'',cm:'',auth:{su:false,nom:'',ville:'',tel:'',pw:'',pw2:''},mlog:{code:'',tel:'',pin:''},busy:false,pushOn:false};
+
+// ===== Données du capo : S (même forme pour le capo et le capo de zone) =====
+let S={ent:{},courses:{},membres:{},versements:{},depenses:{}};
+const COLS=['courses','membres','versements','depenses'];
+const L=col=>Object.values(S[col]||{});
+const lv=id=>S.membres[id];
+const crs=id=>S.courses[id];
+const livreurs=()=>L('membres').filter(m=>(m.role||'livreur')==='livreur');
+const actif=c=>c.statut==='prise'||c.statut==='recuperee';
+const inZone=x=>!V.zf||x.zone===V.zf;
+const zones=()=>(S.ent.zones&&S.ent.zones.length?S.ent.zones:['Touba']);
+const libreOk=()=>S.ent.mode!=='capo';
+const isZoneMgr=()=>MODE==='membre'&&MV&&MV.role==='zone';
+const canAdmin=()=>MODE==='capo'||MODE==='demo';
+
+// ----- synchronisation du capo (fonctionne sans internet : les changements attendent dans OPS) -----
+let OPS=[], LAST='', FLUSHING=false, PULLING=false, PULLT=null, FLUSHT=null, SEEN={};
+const K=(n)=>'tl-'+n+'-'+(USER?USER.id.slice(0,8):'demo');
+function persistS(){if(MODE==='demo'){lsSet('tl-demo',S);return;}if(!USER)return;lsSet(K('s'),S);lsSet(K('ops'),OPS);lsSet(K('last'),LAST);}
+function loadS(){S=lsGet(K('s'),null)||{ent:{},courses:{},membres:{},versements:{},depenses:{}};COLS.forEach(c=>{S[c]=S[c]||{};});S.ent=S.ent||{};OPS=lsGet(K('ops'),[]);LAST=lsGet(K('last'),'');}
+function applyLocal(op){if(op.col==='set'){if(op.id==='ent')S.ent=Object.assign({},S.ent,op.patch);return;}
+  if(op.del){delete S[op.col][op.id];return;}S[op.col][op.id]=Object.assign({},S[op.col][op.id],op.patch);}
+function put(col,id,patch){
+  if(MODE==='demo'){applyLocal({col,id,patch});persistS();return;}
+  const op={col,id,patch};applyLocal(op);OPS.push(op);persistS();schedFlush();}
+function del(col,id){
+  if(MODE==='demo'){applyLocal({col,id,del:true});persistS();return;}
+  const op={col,id,del:true};applyLocal(op);OPS.push(op);persistS();schedFlush();}
+function schedFlush(){clearTimeout(FLUSHT);FLUSHT=setTimeout(flush,400);}
+async function flush(){
+  if(MODE!=='capo'||FLUSHING||!OPS.length)return;if(!navigator.onLine||!SB){netBar();return;}
+  FLUSHING=true;const batch=OPS.slice(0,250);
+  try{await rpc('liv_put',{p_ops:batch});OPS.splice(0,batch.length);persistS();FLUSHING=false;
+    if(OPS.length)return flush();await pull();}
+  catch(e){FLUSHING=false;if(/expiré/i.test(String(e.message||'')))return refreshAcc();if(!isNet(e))console.warn('sync',e);netBar();}
+}
+async function pull(silent){
+  if(MODE!=='capo'||PULLING||!navigator.onLine||!SB)return;PULLING=true;let changed=false,nouv=0;
+  try{for(let loop=0;loop<20;loop++){
+      let q=SB.from('liv_rows').select('col,id,data,deleted,updated_at').order('updated_at',{ascending:true}).limit(1000);
+      if(LAST)q=q.gt('updated_at',LAST);
+      const r=await q;if(r.error)throw r.error;const rows=r.data||[];
+      for(const x of rows){changed=true;
+        if(x.col==='set'){if(x.id==='ent'&&!x.deleted)S.ent=x.data||{};}
+        else if(S[x.col]){if(x.deleted)delete S[x.col][x.id];else{
+          if(x.col==='courses'&&x.data&&x.data.statut==='nouvelle'&&!SEEN[x.id]&&LAST)nouv++;
+          S[x.col][x.id]=x.data;}}
+        LAST=x.updated_at;}
+      if(rows.length<1000)break;}
+    OPS.forEach(applyLocal);
+    L('courses').forEach(c=>{if(c.statut==='nouvelle')SEEN[c.id]=1;});
+    persistS();
+    if(changed&&!silent)renderKeep();
+    if(nouv){toast(nouv>1?nouv+' nouvelles courses':'Nouvelle course reçue');buzz();}
+  }catch(e){if(!isNet(e))console.warn('pull',e);}
+  PULLING=false;netBar();
+}
+function startPolling(fn,ms){clearInterval(PULLT);PULLT=setInterval(()=>{if(document.visibilityState==='visible')fn();},ms);}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='visible')return;if(MODE==='capo'){flush();pull();}else if(MODE==='membre'){replayMQ().then(()=>mRefresh(true));}});
+window.addEventListener('online',()=>{netBar();if(MODE==='capo'){flush();pull();}else if(MODE==='membre')replayMQ().then(()=>mRefresh(true));});
+window.addEventListener('offline',netBar);
+function netBar(){let b=document.querySelector('.net');const pend=MODE==='capo'?OPS.length:MODE==='membre'?MQ.length:0;
+  const txt=!navigator.onLine?'Pas d\'internet · '+(pend?pend+' changement'+(pend>1?'s':'')+' en attente':'vous pouvez continuer'):pend?'Envoi des changements…':'';
+  if(!txt){if(b)b.remove();return;}if(!b){b=document.createElement('div');b.className='net';b.setAttribute('role','status');document.body.appendChild(b);}
+  b.className='net'+(navigator.onLine?' sync':'');b.textContent=txt;}
+
+// ----- compte du capo -----
+async function refreshAcc(){try{ACC=await rpc('liv_compte');if(ACC&&!ACC.ok)ACC=await rpc('liv_inscription',{p_nom:'',p_ville:''});lsSet(K('acc'),ACC);}catch(e){ACC=ACC||lsGet(K('acc'),null);}
+  if(ACC&&ACC.actif===false){MODE='locked';}render();}
+async function startCapo(){
+  MODE='capo';loadS();ACC=lsGet(K('acc'),null);V.tab=V.tab||'courses';render();
+  await refreshAcc();if(MODE!=='capo')return;
+  await flush();await pull(true);render();uploadImgs();
+  startPolling(()=>{flush();pull();},10000);pushCheck();
+}
+function startDemo(){MODE='demo';USER=null;S=lsGet('tl-demo',null)||demoSeed();ACC={ok:true,actif:true,formule:'premium',code:'demo',fin:today(),limites:{livreurs:1000,zones:100},demo:true};V.tab='courses';render();}
+async function logout(){if(MODE==='capo'){try{await SB.auth.signOut();}catch(e){}lsDel('tl-auth');}
+  clearInterval(PULLT);USER=null;ACC=null;lsDel('tl-mem');MEM=null;MV=null;MODE='start';render();}
+
+// ===== Capo de zone et livreurs : numéro + code, actions qui attendent si pas d'internet =====
+let MEM=lsGet('tl-mem',null);   // {code, tel, pin}
+let MV=lsGet('tl-mv',null);     // dernière vue reçue du serveur
+let MQ=lsGet('tl-mq',[]);       // actions en attente
+let MSEEN={}, MPOLL=null;
+function setMV(v,notify){if(!v||!v.ok)return;const before=MV?new Set((MV.courses||[]).filter(c=>c.statut==='nouvelle'||c.lid===MV.me.id&&actif(c)).map(c=>c.id)):null;
+  MV=v;lsSet('tl-mv',MV);vueToS();
+  if(notify&&before){const nv=(MV.courses||[]).filter(c=>(c.statut==='nouvelle'||(c.lid===MV.me.id&&actif(c)))&&!before.has(c.id));if(nv.length){toast(nv.length>1?nv.length+' nouvelles courses':'Nouvelle course : N° '+nv[0].no);buzz();}}}
+function vueToS(){if(!MV)return;S={ent:MV.ent||{},courses:{},membres:{},versements:{},depenses:{}};
+  (MV.courses||[]).forEach(c=>S.courses[c.id]=c);(MV.membres||[]).forEach(m=>S.membres[m.id]=m);
+  if(MV.role!=='zone')S.membres[MV.me.id]=MV.me;
+  (MV.versements||[]).forEach(x=>S.versements[x.id]=x);(MV.depenses||[]).forEach(x=>S.depenses[x.id]=x);
+  MQ.forEach(q=>optim(q.act,q.id,q.arg));}
+async function mcall(act,id,arg){const r=await SB.rpc('liv_act',{p_code:MEM.code,p_tel:MEM.tel,p_pin:MEM.pin,p_act:act,p_id:id||'',p_arg:arg||{}});if(r.error)throw r.error;return r.data;}
+async function mLogin(code,tel,pin){const r=await SB.rpc('liv_membre',{p_code:code,p_tel:tel,p_pin:pin});if(r.error)throw r.error;return r.data;}
+async function mRefresh(notify){if(MODE!=='membre'||!navigator.onLine||!SB||MQ.length)return;
+  try{const v=await mcall('vue');setMV(v,notify);renderKeep();}catch(e){if(/incorrect|introuvable/i.test(String(e.message||''))){toast('Votre accès a changé : entrez de nouveau');lsDel('tl-mem');MEM=null;MV=null;MODE='mlogin';render();}else if(/fermé/i.test(String(e.message||''))){MODE='locked';render();}}
+}
+// petites mises à jour à l'écran avant la réponse du serveur
+function optim(act,id,arg){const c=S.courses[id],now=Date.now(),me=MV&&MV.me;arg=arg||{};
+  if(act==='dispo'&&me){me.dispo=!!arg.v;if(S.membres[me.id])S.membres[me.id].dispo=!!arg.v;return;}
+  if(!c)return;const t=Object.assign({},c.t);
+  if(act==='prendre'){c.statut='prise';c.lid=me.id;t.prise=now;}
+  if(act==='recup'&&c.statut==='prise'){c.statut='recuperee';t.recup=now;}
+  if(act==='livre'){c.statut='livree';t.livree=now;if(!t.recup)t.recup=now;}
+  if(act==='envoyer'){c.lid=arg.lid;if(c.statut==='nouvelle'){c.statut='prise';t.prise=now;}}
+  if(act==='annuler')c.statut='annulee';
+  if(act==='rendu')c.rendu=true;
+  if(act==='modifier')Object.assign(c,arg);
+  c.t=t;}
+async function mdo(act,id,arg,msg){
+  optim(act,id,arg);renderKeep();
+  if(!navigator.onLine){MQ.push({act,id,arg});lsSet('tl-mq',MQ);netBar();toast('Enregistré : envoyé quand internet revient');return true;}
+  try{const v=await mcall(act,id,arg);if(v&&v.ok)setMV(v);renderKeep();if(msg)toast(msg);return true;}
+  catch(e){if(isNet(e)){MQ.push({act,id,arg});lsSet('tl-mq',MQ);netBar();toast('Enregistré : envoyé quand internet revient');return true;}
+    toast(errMsg(e));await mRefresh();return false;}
+}
+async function replayMQ(){if(MODE!=='membre'||!SB)return;while(MQ.length&&navigator.onLine){const q=MQ[0];
+    try{const v=await mcall(q.act,q.id,q.arg);MQ.shift();lsSet('tl-mq',MQ);if(v&&v.ok)setMV(v);}
+    catch(e){if(isNet(e))break;MQ.shift();lsSet('tl-mq',MQ);toast('Non enregistré : '+errMsg(e));}}
+  netBar();renderKeep();}
+function startMembre(){MODE='membre';vueToS();render();if(!SB)return;replayMQ().then(()=>mRefresh(false));
+  clearInterval(MPOLL);MPOLL=setInterval(()=>{if(document.visibilityState==='visible')replayMQ().then(()=>mRefresh(true));},12000);pushCheck();}
+
+// ===== Actions du capo et du capo de zone (mêmes écrans) =====
+function courseNeedsCode(march){const cv=S.ent.codeLiv||'vendeur';return cv==='toujours'||(cv==='vendeur'&&+march>0);}
+async function doNewCourse(o,lid){
+  if(isZoneMgr()){const a=Object.assign({},o,{lid:lid||''});const ok=await mdo('creer','',a,lid?'Course envoyée à '+(lv(lid)||{}).nom:'Course enregistrée');return ok;}
+  const id=uid(),now=Date.now();
+  const c=Object.assign({id,src:'tel',type:'colis',cli:{nom:'',tel:''},de:'',a:'',dest:{nom:'',tel:''},note:'',prix:0,paie:'exp',mode:'cash',march:0,statut:'nouvelle',lid:'',rendu:false},o,
+    {t:{cree:now},ctk:rnd(16),dtk:rnd(16),cl:courseNeedsCode(o.march)?pin4():'',par:'capo'});
+  if(MODE==='demo')c.no=(Math.max(1000,...L('courses').map(x=>+x.no||0))+1);
+  if(lid){c.lid=lid;c.statut='prise';c.t.prise=now;}
+  put('courses',id,c);toast(lid?'Course envoyée à '+(lv(lid)||{}).nom:'Course enregistrée');return true;}
+function doEditCourse(id,o){if(isZoneMgr())return mdo('modifier',id,o,'Course modifiée');const c=crs(id);if(!c)return;
+  const p=Object.assign({},o);if(o.march!==undefined&&!c.cl&&courseNeedsCode(o.march))p.cl=pin4();put('courses',id,p);toast('Course modifiée');}
+function doAssign(id,lid){const c=crs(id),l=lv(lid);if(!c||!l)return;
+  if(isZoneMgr())return mdo('envoyer',id,{lid},'Envoyée à '+l.nom);
+  const p={lid,par:'capo'};if(c.statut==='nouvelle'){p.statut='prise';p.t=Object.assign({},c.t,{prise:Date.now()});}put('courses',id,p);toast('Course N° '+(c.no||'')+' envoyée à '+l.nom);}
+function doCancel(id){if(isZoneMgr())return mdo('annuler',id,{},'Course annulée');put('courses',id,{statut:'annulee',par:'capo'});toast('Course annulée');}
+function doRendu(id){if(isZoneMgr())return mdo('rendu',id,{},'Argent rendu au vendeur');put('courses',id,{rendu:true});toast('Argent rendu au vendeur');}
+function doStep(id,to){const c=crs(id);if(!c)return;
+  if(MODE==='membre')return mdo(to==='livree'?'livre':'recup',id,{},to==='livree'?'Course livrée ✓':'Colis récupéré');
+  const t=Object.assign({},c.t);if(to==='recuperee')t.recup=Date.now();if(to==='livree'){t.livree=Date.now();if(!t.recup)t.recup=t.livree;}
+  put('courses',id,{statut:to,t,par:'capo'});toast(to==='livree'?'Course livrée ✓':'Colis récupéré');}
+function doVerse(lid,date,montant){if(isZoneMgr())return mdo('verse','',{lid,date,montant},'Versement noté');
+  const id=lid.slice(0,30)+'-'+date;put('versements',id,{id,lid,date,montant,t:Date.now(),par:'capo'});toast('Versement noté');}
+function doUnverse(lid,date){if(isZoneMgr())return mdo('unverse','',{lid,date});del('versements',lid.slice(0,30)+'-'+date);}
+function doDepense(o){const id=o.id||rnd(12);
+  if(isZoneMgr())return mdo('depense','',Object.assign({},o,{id}),'Dépense notée');
+  put('depenses',id,Object.assign({id,t:Date.now()},o));toast('Dépense notée');}
+function doDepenseDel(id){if(isZoneMgr())return mdo('depense_del',id,{});del('depenses',id);}
+
+// ===== Caisse : ce que chaque livreur doit verser =====
+function caisse(l,date){
+  const cs=L('courses').filter(c=>c.lid===l.id&&c.statut==='livree'&&dayOf(c.t&&c.t.livree)===date);
+  const total=sum(cs,c=>+c.prix),digital=sum(cs.filter(c=>c.mode!=='cash'),c=>+c.prix),march=sum(cs,c=>+c.march);
+  const p=l.paie||{t:'pct',v:30};let partL,partP;
+  if(p.t==='pct'){partL=Math.round(total*(+p.v||0)/100);partP=total-partL;}
+  else if(p.t==='jour'){partP=cs.length?(+p.v||0):0;partL=total-partP;}
+  else{partL=0;partP=total;}
+  const aVerser=partP-digital+march;
+  const v=L('versements').find(x=>x.lid===l.id&&x.date===date);
+  return {cs,total,digital,march,partL,partP,aVerser,v};
+}
+// rapport du mois pour chaque livreur / moto
+function rapport(l,mois){
+  const cs=L('courses').filter(c=>c.lid===l.id&&c.statut==='livree'&&dayOf(c.t&&c.t.livree).slice(0,7)===mois);
+  const total=sum(cs,c=>+c.prix),jours=new Set(cs.map(c=>dayOf(c.t.livree))).size;const p=l.paie||{t:'pct',v:30};
+  const partL=p.t==='pct'?Math.round(total*(+p.v||0)/100):p.t==='jour'?Math.max(0,total-(+p.v||0)*jours):(+p.v||0);
+  const dep=sum(L('depenses').filter(d=>d.lid===l.id&&String(d.date||'').slice(0,7)===mois),d=>+d.montant);
+  return {n:cs.length,total,jours,partL,dep,benef:total-partL-dep};
+}
+
+// ===== Affichage =====
+const ST={nouvelle:{t:'Nouvelle',cls:'p-nouvelle'},prise:{t:'Livreur en route',cls:'p-prise'},recuperee:{t:'Récupéré',cls:'p-recuperee'},livree:{t:'Livré',cls:'p-livree'},annulee:{t:'Annulée',cls:'p-annulee'}};
+const SRC={lien:'🌐 Lien',tel:'📞 Téléphone',boutique:'🏪 Au dépôt',shop:'🛍️ Teranga Shop'};
+const MODEP={cash:'Espèces',wave:'Wave',om:'Orange Money'};
+const DEPT={carburant:'⛽ Carburant',reparation:'🔧 Réparation',vidange:'🛢️ Vidange',pneu:'🛞 Pneu',autre:'📝 Autre'};
+const paieLabel=p=>{p=p||{t:'pct',v:30};return p.t==='pct'?p.v+' % par course':p.t==='jour'?'Versement '+F(p.v)+' / jour':'Salaire '+F(p.v)+' / mois';};
+const LOGO_IN='<defs><linearGradient id="tlA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#16397A"/><stop offset="1" stop-color="#0B2149"/></linearGradient></defs><rect width="128" height="128" rx="30" fill="url(#tlA)"/><circle cx="66" cy="62" r="44" fill="#FFC21A" opacity=".12"/><g stroke="#FFC21A" stroke-width="4" stroke-linecap="round" opacity=".55"><path d="M4 52h10M2 63h13M6 74h9"/></g><rect x="15" y="38" width="30" height="27" rx="5" fill="#0F7A4F"/><path d="M15 46h30" stroke="#0A5A3A" stroke-width="2.5"/><path d="M30.0,49.0 L31.6,53.3 L36.2,53.5 L32.6,56.3 L33.8,60.8 L30.0,58.2 L26.2,60.8 L27.4,56.3 L23.8,53.5 L28.4,53.3 Z" fill="#FFC21A"/><path d="M30 63 C40 60 50 60 58 62" stroke="#FFC21A" stroke-width="7" stroke-linecap="round" fill="none"/><path d="M34 88 L56 80" stroke="#FFC21A" stroke-width="6" stroke-linecap="round"/><path d="M51 72 H70 L73 85 H57 Z" fill="#FFC21A"/><path d="M57 66 C60 57 76 54 82 60 C84 63 82 67 78 68 L60 70 C57 70 56 68 57 66 Z" fill="#E8402E"/><path d="M85 49 L96 88" stroke="#FFC21A" stroke-width="6" stroke-linecap="round"/><path d="M80 48 L88 47" stroke="#FFC21A" stroke-width="5" stroke-linecap="round"/><path d="M22 80 C24 71 32 67 40 69" stroke="#FFC21A" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M87 63 C92 62 97 65 99 70" stroke="#FFC21A" stroke-width="5" stroke-linecap="round" fill="none"/><circle cx="89.5" cy="57" r="3.4" fill="#7FD3FF"/><g fill="none" stroke="#FFC21A" stroke-width="7"><circle cx="34" cy="88" r="12.5"/><circle cx="96" cy="88" r="12.5"/></g><g fill="#0E2A57"><circle cx="34" cy="88" r="3.2"/><circle cx="96" cy="88" r="3.2"/></g><g stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M71 45 L52 61" stroke-width="11"/><path d="M73 47 L85 50" stroke-width="6.5"/><path d="M53 61 L69 66 L63 80" stroke-width="8.5"/></g><circle cx="74" cy="35" r="10.5" fill="#FFFFFF"/><path d="M74 28.5 C79.5 27.5 84.8 30.5 85 35.5 C85.1 38.6 83 40.8 80 41 L74.5 41 C75.8 37 75.8 32.5 74 28.5 Z" fill="#7FD3FF"/>';
+const logo=n=>'<svg width="'+n+'" height="'+n+'" viewBox="0 0 128 128" aria-hidden="true" style="flex:none;display:block">'+LOGO_IN+'</svg>';
+const brandLogo=(n,src)=>{const u=src!==undefined?src:S.ent.logo;return imgOk(u)?'<img class="blogo" src="'+esc(u)+'" width="'+n+'" height="'+n+'" alt="">':logo(n);};
+function grp(title,inner){return '<div class="f"><span>'+title+'</span>'+inner+'</div>';}
+function chips(name,opts,sel){return '<div class="chips" role="radiogroup">'+opts.map(([v,t])=>'<label><input type="radio" name="'+name+'" value="'+esc(v)+'"'+(String(v)===String(sel)?' checked':'')+'><span>'+t+'</span></label>').join('')+'</div>';}
+function fv(n){const r=document.querySelector('[name="'+n+'"]:checked');if(r)return r.value;const el=$(n);return el?el.value:'';}
+function zoneOptions(sel){return zones().map(z=>'<option'+(z===sel?' selected':'')+'>'+esc(z)+'</option>').join('');}
+function openSheet(title,html){$('sheetRoot').innerHTML='<div class="sheet-bg" data-a="closeBg"><div class="sheet gut" role="dialog" aria-modal="true" aria-label="'+esc(title)+'"><div class="wrap"><div class="sheet-head"><h2>'+esc(title)+'</h2><button class="b b-line b-sm" data-a="close">Fermer</button></div>'+html+'</div></div></div>';}
+function closeSheet(){$('sheetRoot').innerHTML='';}
+let RK=0;function renderKeep(){if($('sheetRoot').innerHTML)return;const y=window.scrollY;render();window.scrollTo(0,y);}
+
+function render(){
+  const app=$('app');
+  if(MODE==='public')return renderPublic();
+  if(MODE==='dest')return renderDest();
+  renderTop();renderTabs();
+  if(MODE==='start')return renderStart();
+  if(MODE==='auth')return renderAuth();
+  if(MODE==='mlogin')return renderMLogin();
+  if(MODE==='locked')return renderLocked();
+  if(MODE==='membre'&&MV&&MV.role!=='zone')return renderLivreur();
+  if(MODE==='membre'&&!MV)return renderMLogin();
+  if(V.tab==='livreurs')return capoLivreurs(app);
+  if(V.tab==='caisse')return capoCaisse(app);
+  if(V.tab==='moto')return capoMoto(app);
+  if(V.tab==='reglages'&&canAdmin())return capoReglages(app);
+  if(V.tab==='moi'&&isZoneMgr())return renderMoi(app);
+  return capoCourses(app);
+}
+function renderTop(){
+  const t=$('top');
+  if(['start','auth','mlogin','locked'].includes(MODE)){t.innerHTML='';t.hidden=true;return;}t.hidden=false;
+  let sub='Teranga Livraison';
+  if(MODE==='demo')sub='Démo · exemples';
+  if(MODE==='membre'&&MV)sub=(MV.role==='zone'?'Capo de zone · ':'Livreur · ')+esc(MV.me.zone||'');
+  const showZ=(MODE==='capo'||MODE==='demo')&&zones().length>1;
+  const zs=showZ?'<div class="zones">'+[['','Toutes les zones']].concat(zones().map(z=>[z,z])).map(([k,x])=>'<button data-a="zf" data-v="'+esc(k)+'" aria-pressed="'+(V.zf===k)+'">'+esc(x)+'</button>').join('')+'</div>':'';
+  t.innerHTML='<div class="wrap gut"><div class="brandrow"><div class="logo">'+brandLogo(44)+'<div style="min-width:0"><div class="n">'+esc(S.ent.nom||'Teranga Livraison')+'</div><div class="s">'+sub+'</div></div></div>'+
+    (MODE==='demo'?'<button class="b b-sun b-sm" data-a="demoOut">Créer mon compte</button>':'')+'</div>'+zs+'</div>';
+}
+function renderTabs(){
+  if(!(MODE==='capo'||MODE==='demo'||isZoneMgr())){$('tabs').innerHTML='';return;}
+  const nb=L('courses').filter(c=>c.statut==='nouvelle'&&inZone(c)).length;
+  const T=[['courses','📦','Courses',nb],['livreurs','🛵','Livreurs',0],['caisse','💵','Caisse',0],['moto','🔧','Motos',0]];
+  if(canAdmin())T.push(['reglages','⚙️','Réglages',0]);else T.push(['moi','👤','Moi',0]);
+  $('tabs').innerHTML='<nav class="tabs gut" aria-label="Onglets" style="--ntabs:'+T.length+'"><div class="wrap">'+T.map(([k,i,x,b])=>'<button data-a="tab" data-v="'+k+'"'+(V.tab===k?' aria-current="page"':'')+'><span class="i" aria-hidden="true">'+i+'</span>'+x+(b?'<span class="badge">'+b+'</span>':'')+'</button>').join('')+'</div></nav>';
+}
+function accBanner(){
+  if(MODE!=='capo'||!ACC||!ACC.ok)return '';const left=Math.round((new Date(ACC.fin)-new Date(ACC.today))/864e5);
+  if(!ACC.paid_until||ACC.trial_end>=ACC.paid_until){return left<=3?'<div class="banner">🎁 Essai gratuit : encore '+Math.max(0,left)+' jour'+(left>1?'s':'')+'<a class="chipbtn go" target="_blank" rel="noopener" href="'+waLink(SUPPORT,'Bonjour Seck Apps, je veux payer mon abonnement Teranga Livraison ('+(S.ent.nom||'')+').')+'">Payer</a></div>':'';}
+  return left<=3?'<div class="banner">Abonnement : se termine le '+fdateL(ACC.fin)+'<a class="chipbtn go" target="_blank" rel="noopener" href="'+waLink(SUPPORT,'Bonjour Seck Apps, je veux renouveler Teranga Livraison ('+(S.ent.nom||'')+').')+'">Renouveler</a></div>':'';
+}
+
+// ----- carte de course -----
+function routeHtml(c){
+  const pin=p=>posOk(p)?' <span class="chipbtn" style="padding:2px 8px;font-size:12px">📍 GPS</span>':'';
+  const de=c.de?esc(c.de):'<span class="muted">À préciser'+(c.vocal?' (écouter le vocal)':'')+'</span>';
+  const a=c.a?esc(c.a):'<span class="muted">À préciser</span>';
+  return '<div class="route"><div><span class="k">Prendre</span><span class="v">'+de+pin(c.depos)+'</span></div><div><span class="k">'+(c.type==='personne'?'Déposer':'Livrer')+'</span><span class="v">'+a+pin(c.apos)+'</span></div></div>';
+}
+function vocalHtml(c){if(!c.vocal)return '';
+  return '<div class="vocal" id="voc-'+c.id+'">🎤 Vocal du client'+(c.vocal.dur?' · 0:'+pad(Math.min(59,c.vocal.dur)):'')+'<button class="b b-line b-sm" data-a="voc" data-id="'+c.id+'">▶️ Écouter</button></div>';}
+function moneyHtml(c,forLiv){
+  const prix=+c.prix?'<b>'+F(c.prix)+'</b>':'<b>Prix à fixer</b>';
+  return '<div class="money"><span>'+prix+'</span><span>Payé par '+(c.paie==='dest'?'celui qui reçoit':"l'expéditeur")+'</span><span>'+(MODEP[c.mode]||'Espèces')+'</span></div>'+
+    (+c.march?'<div class="cod">💰 Encaisser pour le vendeur : '+F(c.march)+(c.statut==='livree'&&!forLiv?(c.rendu?' · rendu ✓':' · à rendre'):'')+'</div>':'')+
+    (c.vendeur&&c.vendeur.nom?'<div class="small muted">🛍️ Vendeur : '+esc(c.vendeur.nom)+(c.vendeur.tel?' · '+telFmt(c.vendeur.tel):'')+'</div>':'');
+}
+function contactHtml(c,full){
+  const p=c.cli&&c.cli.tel;let h='';
+  if(p)h+='<div class="who"><span>👤 '+esc(c.cli.nom||'Client')+' · <span class="num" style="font-size:15px">'+telFmt(p)+'</span></span>'+(full?'<a class="b b-line b-sm" href="'+telLink(p)+'">📞 Appeler</a><a class="b b-line b-sm" href="'+waLink(p)+'" target="_blank" rel="noopener">💬</a>':'')+'</div>';
+  if(c.dest&&c.dest.tel)h+='<div class="who"><span>📍 Reçoit : '+esc(c.dest.nom||'')+' <span class="num" style="font-size:15px">'+telFmt(c.dest.tel)+'</span></span>'+(full?'<a class="b b-line b-sm" href="'+telLink(c.dest.tel)+'">📞</a>':'')+'</div>';
+  if(c.note)h+='<div class="small muted">📝 '+esc(c.note)+'</div>';
+  return h;
+}
+function courseCard(c,ctx){
+  const l=lv(c.lid);const st=ST[c.statut]||ST.nouvelle;const open=c.statut!=='annulee'&&c.statut!=='livree';
+  let h='<article class="course s-'+c.statut+'"><div class="c-head"><span class="c-no">N° '+(c.no||'…')+'</span><span class="c-meta">'+(c.vocal?'🎤 Vocal':SRC[c.src]||'')+' · '+hhmm(c.t&&c.t.cree)+(zones().length>1&&!V.zf?' · '+esc(c.zone):'')+'</span><span class="pill '+st.cls+'">'+st.t+'</span></div>';
+  h+='<div style="font-weight:800">'+(c.type==='personne'?'🛵 Transport de personne':'📦 Colis')+'</div>'+routeHtml(c)+vocalHtml(c)+moneyHtml(c,ctx!=='capo')+contactHtml(c,open);
+  if(ctx==='capo'){
+    if(c.cl&&open)h+='<div class="small">🔐 Code de livraison : <b class="code">'+esc(c.cl)+'</b> <span class="muted">(celui qui reçoit le donne au livreur)</span></div>';
+    if(l)h+='<div class="who"><span>🛵 <b>'+esc(l.nom)+'</b>'+(c.statut==='livree'?' · livré à '+hhmm(c.t.livree):c.statut==='recuperee'?' · récupéré à '+hhmm(c.t.recup):c.statut==='prise'?' · parti à '+hhmm(c.t.prise):'')+'</span>'+(c.photo?'<button class="b b-line b-sm" data-a="photo" data-id="'+c.id+'">📷 Photo</button>':'')+'</div>';
+    h+='<div class="row">';
+    if(c.statut==='nouvelle')h+='<button class="b b-sun" data-a="assign" data-id="'+c.id+'">🛵 Envoyer à un livreur</button>';
+    if(actif(c))h+='<button class="b b-line" data-a="assign" data-id="'+c.id+'">Changer de livreur</button>';
+    if(c.statut==='livree'&&+c.march&&!c.rendu)h+='<button class="b b-go" data-a="rendu" data-id="'+c.id+'">Argent rendu au vendeur ✓</button>';
+    h+='</div><div class="row">';
+    if(c.statut!=='annulee')h+='<button class="b b-line b-sm" data-a="edit" data-id="'+c.id+'">✏️ Modifier</button><button class="b b-line b-sm" data-a="recu" data-id="'+c.id+'">🧾 Reçu</button>';
+    if(open&&c.dest&&c.dest.tel&&c.dtk)h+='<button class="b b-line b-sm" data-a="destLink" data-id="'+c.id+'">📍 Lien position</button>';
+    if(actif(c))h+='<button class="b b-line b-sm" data-a="stepCapo" data-id="'+c.id+'">'+(c.statut==='prise'?'Marquer récupéré':'Marquer livré')+'</button>';
+    if(open)h+='<button class="b b-bad b-sm" data-a="cancel" data-id="'+c.id+'">Annuler</button>';
+    h+='</div>';
+    if(c.statut==='nouvelle'&&libreOk())h+='<div class="hint">Les livreurs disponibles de '+esc(c.zone)+' la voient aussi : le premier qui touche « Je prends » la reçoit.</div>';
+  }else if(ctx==='libre'){
+    h+='<button class="b b-go b-big" data-a="take" data-id="'+c.id+'">✋ JE PRENDS</button>';
+  }else if(ctx==='mine'){
+    const q=c.statut==='prise'?c.de:c.a,pos=c.statut==='prise'?c.depos:c.apos;
+    if(q||posOk(pos))h+='<a class="b b-line" href="'+mapLink(q,c.zone,pos)+'" target="_blank" rel="noopener">🗺️ Itinéraire'+(posOk(pos)?' (position exacte)':' vers « '+esc(q)+' »')+'</a>';
+    const aRec=c.mode==='cash'&&c.paie!=='dest'?+c.prix||0:0,aLiv=(c.mode==='cash'&&c.paie==='dest'?+c.prix||0:0)+(+c.march||0);
+    if(c.statut==='prise')h+='<button class="b b-pick b-big" data-a="mstep" data-v="recup" data-id="'+c.id+'">📦 RÉCUPÉRÉ'+(aRec>0?' · j\'encaisse '+F(aRec):'')+'</button>';
+    if(c.statut==='recuperee')h+='<button class="b b-done b-big" data-a="mlivre" data-id="'+c.id+'">✅ LIVRÉ'+(aLiv>0?' · j\'encaisse '+F(aLiv):'')+'</button>';
+  }
+  return h+'</article>';
+}
+
+// ----- Courses (capo / capo de zone) -----
+function capoCourses(app){
+  const cs=L('courses').filter(inZone);
+  const nouv=cs.filter(c=>c.statut==='nouvelle'),enc=cs.filter(actif),liv=cs.filter(c=>c.statut==='livree'&&dayOf(c.t.livree)===today());
+  const FL=[['actives','À faire',nouv.length+enc.length],['nouvelles','Nouvelles',nouv.length],['livrees',"Livrées aujourd'hui",liv.length],['toutes','Toutes',cs.length]];
+  let list=V.cf==='nouvelles'?nouv:V.cf==='livrees'?liv:V.cf==='toutes'?cs:nouv.concat(enc);
+  const ord={nouvelle:0,prise:1,recuperee:2,livree:3,annulee:4};
+  list=list.slice().sort((a,b)=>ord[a.statut]-ord[b.statut]||(b.t.cree||0)-(a.t.cree||0));
+  if(V.cf==='toutes')list=list.slice(0,150);
+  const dispo=livreurs().filter(l=>l.dispo&&inZone(l)).length;
+  app.innerHTML=accBanner()+'<div class="tiles"><div class="tile"><div class="k">Nouvelles</div><div class="v">'+nouv.length+'</div></div><div class="tile"><div class="k">En route</div><div class="v">'+enc.length+'</div></div><div class="tile"><div class="k">Livreurs dispo</div><div class="v">'+dispo+'</div></div></div>'+
+    '<div style="margin-top:12px"><button class="b b-sun b-big" data-a="new">＋ Nouvelle course</button></div>'+
+    '<div class="filters" role="group" aria-label="Filtrer">'+FL.map(([k,x,n])=>'<button data-a="cf" data-v="'+k+'" aria-pressed="'+(V.cf===k)+'">'+x+' · '+n+'</button>').join('')+'</div>'+
+    '<div class="list">'+(list.length?list.map(c=>courseCard(c,'capo')).join(''):'<div class="empty">Aucune course ici pour le moment.<br>Touchez « Nouvelle course » quand un client appelle ou passe au dépôt. Les demandes du lien clients arrivent ici toutes seules.</div>')+'</div>';
+}
+function courseForm(c){
+  const isNew=!c;c=c||{zone:isZoneMgr()?MV.me.zone:(V.zf||zones()[0]),src:'tel',type:'colis',cli:{nom:'',tel:''},de:'',a:'',dest:{nom:'',tel:''},note:'',prix:'',paie:'exp',mode:'cash',march:''};
+  const tar=(S.ent.tarifs||[]).filter(t=>!isZoneMgr()||t.z===MV.me.zone).map(t=>'<option value="'+(+t.prix)+'">'+esc(t.z)+' · '+esc(t.lieu)+' — '+F(t.prix)+'</option>').join('');
+  let to='';
+  if(isNew){const ls=livreurs().filter(l=>!isZoneMgr()||l.zone===MV.me.zone);
+    to='<label class="f">Qui fait la course ?<select id="f_to">'+(libreOk()?'<option value="">Le premier livreur disponible</option>':'<option value="">À envoyer plus tard</option>')+ls.map(l=>'<option value="'+esc(l.id)+'">'+esc(l.nom)+' · '+esc(l.zone)+(l.dispo?' · disponible':' · occupé')+'</option>').join('')+'</select></label>';}
+  return '<form id="fCourse" class="stack" data-id="'+(isNew?'':esc(c.id))+'">'+
+    (isNew?grp('La demande arrive comment ?',chips('f_src',[['tel','📞 Téléphone / WhatsApp'],['boutique','🏪 Au dépôt']],c.src)):'')+
+    '<div class="grid2">'+(isZoneMgr()?'<div class="f"><span>Zone</span><b style="padding:12px 0;color:var(--ink)">'+esc(c.zone)+'</b></div>':'<label class="f">Zone<select id="f_zone">'+zoneOptions(c.zone)+'</select></label>')+grp('Type',chips('f_type',[['colis','📦 Colis'],['personne','🛵 Personne']],c.type))+'</div>'+
+    '<div class="grid2"><label class="f">Téléphone du client<input id="f_clitel" inputmode="tel" value="'+esc(telFmt(c.cli&&c.cli.tel))+'" placeholder="77 000 00 00"></label><label class="f">Nom<input id="f_clinom" value="'+esc(c.cli&&c.cli.nom)+'" placeholder="Facultatif"></label></div>'+
+    '<div class="hint" id="f_hint" hidden></div>'+
+    '<label class="f">Où prendre ?<input id="f_de" value="'+esc(c.de)+'" placeholder="Quartier, repère"></label>'+
+    '<label class="f">Où livrer ?<input id="f_a" value="'+esc(c.a)+'" placeholder="Quartier, repère"></label>'+
+    '<div class="grid2"><label class="f">Tél. de celui qui reçoit<input id="f_desttel" inputmode="tel" value="'+esc(telFmt(c.dest&&c.dest.tel))+'" placeholder="Facultatif"></label><label class="f">Son nom<input id="f_destnom" value="'+esc(c.dest&&c.dest.nom)+'" placeholder="Facultatif"></label></div>'+
+    (tar?'<label class="f">Tarif<select id="f_tarif"><option value="">Choisir dans la liste…</option>'+tar+'</select></label>':'')+
+    '<label class="f">Prix de la livraison (F)<input id="f_prix" inputmode="numeric" value="'+esc(c.prix||'')+'" placeholder="1000"></label>'+
+    grp('Qui paie la livraison ?',chips('f_paie',[['exp',"L'expéditeur"],['dest','Celui qui reçoit']],c.paie))+
+    grp('Paiement',chips('f_mode',[['cash','Espèces'],['wave','Wave'],['om','Orange Money']],c.mode))+
+    '<label class="f">Argent à encaisser pour un vendeur (F)<input id="f_march" inputmode="numeric" value="'+esc(c.march||'')+'" placeholder="0 si rien"><span class="hint" style="font-weight:500">Vendeurs TikTok / Instagram : le livreur encaisse la marchandise et vous la rendez au vendeur.</span></label>'+
+    '<label class="f">Note pour le livreur<input id="f_note" value="'+esc(c.note)+'" placeholder="Ex : fragile, appeler avant"></label>'+
+    to+'<button class="b b-sun b-big" type="submit">'+(isNew?'Enregistrer la course':'Enregistrer')+'</button></form>';
+}
+function readCourseForm(){const o={type:fv('f_type')||'colis',cli:{nom:fv('f_clinom').trim(),tel:tel9(fv('f_clitel'))},de:fv('f_de').trim(),a:fv('f_a').trim(),dest:{nom:fv('f_destnom').trim(),tel:tel9(fv('f_desttel'))},prix:Math.round(num(fv('f_prix'))),paie:fv('f_paie')||'exp',mode:fv('f_mode')||'cash',march:Math.round(num(fv('f_march'))),note:fv('f_note').trim()};
+  if($('f_zone'))o.zone=fv('f_zone');else if(isZoneMgr())o.zone=MV.me.zone;return o;}
+function clientHint(tel){const t=tel9(tel);if(t.length<9)return null;
+  const cs=L('courses').filter(c=>c.cli&&tel9(c.cli.tel)===t).sort((a,b)=>(b.t.cree||0)-(a.t.cree||0));return cs[0]||null;}
+function assignSheet(c){
+  const all=livreurs().filter(l=>!isZoneMgr()||l.zone===MV.me.zone);
+  const ls=all.filter(l=>l.zone===c.zone).sort((a,b)=>(b.dispo?1:0)-(a.dispo?1:0)),others=all.filter(l=>l.zone!==c.zone);
+  const row=l=>{const n=L('courses').filter(x=>x.lid===l.id&&actif(x)).length;return '<div class="card lv"><div class="av">'+initials(l.nom)+'<i class="'+(l.dispo?'on':'')+'"></i></div><div class="main"><div class="t">'+esc(l.nom)+'</div><div class="s">'+(l.dispo?'Disponible':'Occupé')+' · '+n+' course'+(n>1?'s':'')+' en cours · '+esc(l.zone)+'</div></div><button class="b '+(l.id===c.lid?'b-soft':'b-go')+' b-sm" data-a="doAssign" data-id="'+esc(c.id)+'" data-l="'+esc(l.id)+'"'+(l.id===c.lid?' disabled':'')+'>'+(l.id===c.lid?'Déjà':'Envoyer')+'</button></div>';};
+  openSheet('Course N° '+(c.no||'')+' → livreur','<div class="stack">'+(ls.length?ls.map(row).join(''):'<div class="empty">Aucun livreur à '+esc(c.zone)+'. Ajoutez-en dans l\'onglet Livreurs.</div>')+(others.length?'<h3>Autres zones</h3>'+others.map(row).join(''):'')+'</div>');
+}
+function recuText(c){const l=lv(c.lid);return (S.ent.nom||'Teranga Livraison')+' – Course N° '+(c.no||'')+'\n'+(c.de?'Prendre : '+c.de+'\n':'')+(c.a?'Livrer : '+c.a+'\n':'')+(+c.prix?'Prix : '+F(c.prix)+' ('+(c.paie==='dest'?'payé par celui qui reçoit':"payé par l'expéditeur")+', '+(MODEP[c.mode]||'Espèces')+')\n':'')+(+c.march?'À encaisser pour le vendeur : '+F(c.march)+'\n':'')+(l?'Livreur : '+l.nom+' · '+telFmt(l.tel)+'\n':'')+(c.cl?'Code de livraison : '+c.cl+' (à donner au livreur seulement quand vous avez le colis)\n':'')+(c.ctk&&ACC&&ACC.code&&!ACC.demo?'Suivre : '+SITE+'commande.html?c='+ACC.code+'&s='+c.id+'&k='+c.ctk+'\n':'')+'Merci de votre confiance !';}
+function destText(c){return 'Bonjour, un colis arrive pour vous ('+(S.ent.nom||'Teranga Livraison')+', N° '+(c.no||'')+').'+(c.cl?' Votre code de livraison : '+c.cl+'. Donnez-le au livreur seulement quand vous avez le colis.':'')+' Pour que le livreur vous trouve facilement, touchez ce lien et envoyez votre position : '+SITE+'commande.html?c='+(ACC&&ACC.code||'')+'&d='+c.id+'&k='+c.dtk;}
+
+// ----- Livreurs -----
+function capoLivreurs(app){
+  const ls=L('membres').filter(inZone).sort((a,b)=>(a.role==='zone'?0:1)-(b.role==='zone'?0:1)||String(a.nom).localeCompare(b.nom));
+  const lim=ACC&&ACC.limites?ACC.limites.livreurs:3,n=livreurs().length;
+  app.innerHTML=(canAdmin()?'<div class="row" style="margin-bottom:12px"><button class="b b-sun b-big" data-a="lvNew">＋ Ajouter un livreur ou un capo de zone</button></div>'+(lim<1000?'<div class="hint" style="margin-bottom:10px">Votre formule : '+n+' / '+lim+' livreurs.</div>':''):'')+
+    '<div class="list">'+(ls.length?ls.map(l=>{const nl=L('courses').filter(c=>c.lid===l.id&&c.statut==='livree'&&dayOf(c.t.livree)===today()).length,a=L('courses').filter(c=>c.lid===l.id&&actif(c)).length;const z=l.role==='zone';
+      return '<div class="card stack"><div class="lv"><div class="av">'+initials(l.nom)+(z?'':'<i class="'+(l.dispo?'on':'')+'"></i>')+'</div><div class="main"><div class="t">'+esc(l.nom)+(z?' · <span class="pill p-recuperee">Capo de zone</span>':'')+'</div><div class="s">'+esc(l.zone)+(z?'':' · '+esc(l.moto||'Moto'))+'</div>'+(z?'':'<div class="s">'+paieLabel(l.paie)+'</div>')+'</div>'+(z?'':'<span class="pill '+(l.dispo?'p-prise':'p-off')+'">'+(l.dispo?'Disponible':'Occupé')+'</span>')+'</div>'+
+      (z?'':'<div class="small muted">'+nl+' livrée'+(nl>1?'s':'')+" aujourd'hui · "+a+' en cours · 📞 <span class="num" style="font-size:15px">'+telFmt(l.tel)+'</span></div>')+
+      (canAdmin()?'<div class="row">'+(l.acces===false?'<span class="pill p-annulee">Accès bloqué</span>':'<span class="b b-soft b-sm">Code : <span class="code">'+esc(l.pin||'')+'</span></span>')+'<button class="b b-line b-sm" data-a="lvCode" data-id="'+esc(l.id)+'">Envoyer l\'accès</button><button class="b b-line b-sm" data-a="lvEdit" data-id="'+esc(l.id)+'">Modifier</button></div>':'<div class="row"><a class="b b-line b-sm" href="'+telLink(l.tel)+'">📞 Appeler</a></div>')+'</div>';}).join(''):'<div class="empty">Aucun livreur pour le moment.'+(canAdmin()?'<br>Ajoutez vos ragazzi : chacun reçoit un code pour entrer.':'')+'</div>')+'</div>';
+}
+function lvForm(l){
+  const isNew=!l;l=l||{nom:'',tel:'',zone:V.zf||zones()[0],moto:'',role:'livreur',paie:{t:'pct',v:30},acces:true};const p=l.paie||{t:'pct',v:30};
+  return '<form id="fLv" class="stack" data-id="'+(isNew?'':esc(l.id))+'">'+grp('Rôle',chips('l_role',[['livreur','🛵 Livreur'],['zone','🧑‍💼 Capo de zone']],l.role||'livreur'))+
+    '<div class="grid2"><label class="f">Nom<input id="l_nom" value="'+esc(l.nom)+'" required></label><label class="f">Téléphone<input id="l_tel" inputmode="tel" value="'+esc(telFmt(l.tel))+'" required></label></div>'+
+    '<div class="grid2"><label class="f">Zone<select id="l_zone">'+zoneOptions(l.zone)+'</select></label><label class="f" id="l_motow">Moto / plaque<input id="l_moto" value="'+esc(l.moto)+'" placeholder="Jakarta · TB 0000"></label></div>'+
+    '<div id="l_paiew" class="stack"'+(l.role==='zone'?' hidden':'')+'>'+grp('Comment il est payé ?',chips('l_pt',[['pct','Pourcentage'],['jour','Versement par jour'],['mois','Salaire par mois']],p.t))+
+    '<label class="f"><span id="l_vlab">'+(p.t==='pct'?'Sa part sur chaque course (%)':p.t==='jour'?'Somme qu\'il verse chaque jour (F)':'Salaire du mois (F)')+'</span><input id="l_pv" inputmode="numeric" value="'+esc(p.v)+'"></label></div>'+
+    '<label class="sw"><span>Accès à l\'app</span><input type="checkbox" id="l_acces"'+(l.acces===false?'':' checked')+' style="width:26px;height:26px"></label>'+
+    '<button class="b b-sun b-big" type="submit">'+(isNew?'Ajouter':'Enregistrer')+'</button>'+(isNew?'':'<button class="b b-line" type="button" data-a="lvPin" data-id="'+esc(l.id)+'">🔑 Nouveau code</button><button class="b b-bad" type="button" data-a="lvDel" data-id="'+esc(l.id)+'">Retirer</button>')+'</form>';
+}
+function accesText(l){return 'Bonjour '+String(l.nom||'').split(' ')[0]+', voici ton accès '+(l.role==='zone'?'capo de zone':'livreur')+' '+(S.ent.nom||'')+' (Teranga Livraison) :\n\nLien : '+SITE+'?livreur='+(ACC&&ACC.code||'')+'\nTon numéro : '+telFmt(l.tel)+'\nTon code : '+l.pin+'\n\nOuvre le lien, tape ton numéro et ton code. Puis « Partager › Sur l\'écran d\'accueil » pour l\'avoir comme une app.';}
+
+// ----- Caisse -----
+function capoCaisse(app){
+  const d=V.cd||today();V.cd=d;
+  const ls=livreurs().filter(inZone);const rows=ls.map(l=>({l,k:caisse(l,d)}));
+  const tot=sum(rows,r=>r.k.total),pp=sum(rows,r=>r.k.partP),nc=sum(rows,r=>r.k.cs.length);
+  const ren=L('courses').filter(c=>inZone(c)&&c.statut==='livree'&&+c.march&&!c.rendu);
+  app.innerHTML='<div class="card daynav"><button class="b b-line b-sm" data-a="day" data-v="-1" aria-label="Jour précédent">‹</button><b>'+fdate(d)+'</b><button class="b b-line b-sm" data-a="day" data-v="1" aria-label="Jour suivant"'+(d>=today()?' disabled':'')+'>›</button></div>'+
+    '<div class="tiles" style="margin-top:10px"><div class="tile"><div class="k">Courses livrées</div><div class="v">'+nc+'</div></div><div class="tile"><div class="k">Total livraisons</div><div class="v">'+F(tot)+'</div></div><div class="tile"><div class="k">Pour le patron</div><div class="v">'+F(pp)+'</div></div></div>'+
+    '<h3>Ce que chaque livreur doit verser</h3><div class="list">'+(rows.length?rows.map(({l,k})=>{
+      if(!k.cs.length)return '<div class="card lv"><div class="av">'+initials(l.nom)+'</div><div class="main"><div class="t">'+esc(l.nom)+'</div><div class="s">Pas de course livrée ce jour'+((l.paie||{}).t==='jour'?' · pas de versement':'')+'</div></div></div>';
+      const due=k.aVerser;
+      return '<div class="card"><div class="lv"><div class="av">'+initials(l.nom)+'</div><div class="main"><div class="t">'+esc(l.nom)+'</div><div class="s">'+paieLabel(l.paie)+'</div></div></div><div style="margin-top:8px">'+
+        '<div class="ca-row"><span>Courses livrées</span><b>'+k.cs.length+'</b></div><div class="ca-row"><span>Total des livraisons</span><b>'+F(k.total)+'</b></div>'+
+        (k.digital?'<div class="ca-row"><span>Payé par Wave / OM (déjà chez vous)</span><b>− '+F(k.digital)+'</b></div>':'')+
+        (k.march?'<div class="ca-row"><span>Marchandise encaissée (à rendre aux vendeurs)</span><b>+ '+F(k.march)+'</b></div>':'')+
+        '<div class="ca-row"><span>'+((l.paie||{}).t==='mois'?'Sa part (il a son salaire)':'Sa part')+'</span><b>'+F(k.partL)+'</b></div>'+
+        '<div class="due"><span>'+(due>=0?'À verser au patron':'Le patron lui doit')+'</span><span class="v">'+F(Math.abs(due))+'</span></div></div>'+
+        (k.v?'<div class="row" style="margin-top:8px"><span class="pill p-prise">Versé '+(k.v.t?'à '+hhmm(k.v.t)+' ':'')+'✓</span><button class="b b-line b-sm" data-a="unverse" data-id="'+esc(l.id)+'">Annuler</button></div>':'<button class="b b-go" style="margin-top:8px" data-a="verse" data-id="'+esc(l.id)+'">Marquer « versé »</button>')+'</div>';}).join(''):'<div class="empty">Ajoutez vos livreurs pour voir la caisse.</div>')+'</div>'+
+    '<h3>Argent à rendre aux vendeurs</h3><div class="list">'+(ren.length?ren.map(c=>{const vt=(c.vendeur&&c.vendeur.tel)||(c.cli&&c.cli.tel);return '<div class="card stack"><div class="who"><b>N° '+(c.no||'')+' · '+F(c.march)+'</b><span class="muted">'+esc((c.vendeur&&c.vendeur.nom)||(c.cli&&c.cli.nom)||'Vendeur')+' · <span class="num" style="font-size:15px">'+telFmt(vt)+'</span></span></div><div class="row"><button class="b b-go b-sm" data-a="rendu" data-id="'+esc(c.id)+'">✓ Marquer rendu</button><a class="b b-line b-sm" target="_blank" rel="noopener" href="'+waLink(vt,'Bonjour, votre client a payé '+F(c.march)+' pour la course N° '+(c.no||'')+'. On vous envoie l\'argent. Merci !')+'">💬 Prévenir le vendeur</a></div></div>';}).join(''):'<div class="empty">Rien à rendre pour le moment.</div>')+'</div>';
+}
+
+// ----- Motos : dépenses et rapport du mois -----
+function capoMoto(app){
+  const m=V.cm||today().slice(0,7);V.cm=m;const ls=livreurs().filter(inZone);
+  const dt=new Date(m+'-15T12:00:00');const ml=dt.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+  const rows=ls.map(l=>({l,r:rapport(l,m)}));const deps=L('depenses').filter(x=>String(x.date||'').slice(0,7)===m&&(!V.zf||x.zone===V.zf||(lv(x.lid)&&lv(x.lid).zone===V.zf))).sort((a,b)=>String(b.date).localeCompare(a.date));
+  const T={n:sum(rows,x=>x.r.n),total:sum(rows,x=>x.r.total),partL:sum(rows,x=>x.r.partL),dep:sum(deps,x=>+x.montant)};T.benef=T.total-T.partL-T.dep;
+  app.innerHTML='<div class="card month"><button class="b b-line b-sm" data-a="mon" data-v="-1" aria-label="Mois précédent">‹</button><b>'+esc(ml)+'</b><button class="b b-line b-sm" data-a="mon" data-v="1" aria-label="Mois suivant"'+(m>=today().slice(0,7)?' disabled':'')+'>›</button></div>'+
+    '<div class="tiles" style="margin-top:10px"><div class="tile"><div class="k">Recettes</div><div class="v">'+F(T.total)+'</div></div><div class="tile"><div class="k">Dépenses motos</div><div class="v">'+F(T.dep)+'</div></div><div class="tile"><div class="k">Bénéfice</div><div class="v">'+F(T.benef)+'</div></div></div>'+
+    '<h3>Chaque moto ce mois</h3><div class="list">'+
+    (rows.length?rows.map(({l,r})=>'<div class="card"><div class="who" style="margin-bottom:4px"><b>'+esc(l.nom)+'</b><span class="muted small">'+esc(l.moto||'')+'</span></div>'+
+      '<div class="kv"><span>Courses livrées</span><b>'+r.n+'</b></div><div class="kv"><span>Recettes</span><b>'+F(r.total)+'</b></div><div class="kv"><span>Pour le livreur</span><b>− '+F(r.partL)+'</b></div><div class="kv"><span>Dépenses moto</span><b>− '+F(r.dep)+'</b></div>'+
+      '<div class="kv" style="font-size:17px"><span><b>Bénéfice</b></span><b style="color:'+(r.benef<0?'var(--bad)':'var(--go)')+'">'+F(r.benef)+'</b></div></div>').join(''):'<div class="empty">Pas encore de livreurs.</div>')+'</div>'+
+    '<div class="hint" style="margin-top:6px">« Pour le livreur » = sa part (pourcentage), ce qu\'il garde au-delà du versement du jour, ou son salaire.</div>'+
+    '<div style="margin-top:14px"><button class="b b-sun" data-a="depNew">＋ Noter une dépense (carburant, réparation…)</button></div>'+
+    '<h3>Dépenses du mois · '+deps.length+'</h3><div class="list">'+(deps.length?deps.map(x=>{const l=lv(x.lid);return '<div class="card lv"><div class="main"><div class="t">'+(DEPT[x.type]||DEPT.autre)+' · '+F(x.montant)+'</div><div class="s">'+fdate(x.date)+(l?' · '+esc(l.nom)+(l.moto?' ('+esc(l.moto)+')':''):'')+(x.note?' · '+esc(x.note):'')+'</div></div><button class="b b-line b-sm" data-a="depDel" data-id="'+esc(x.id)+'" aria-label="Retirer">✕</button></div>';}).join(''):'<div class="empty">Aucune dépense notée ce mois.</div>')+'</div>';
+}
+function depForm(){const ls=livreurs().filter(l=>!isZoneMgr()||l.zone===MV.me.zone);
+  return '<form id="fDep" class="stack"><label class="f">Moto / livreur<select id="d_lid">'+ls.map(l=>'<option value="'+esc(l.id)+'">'+esc(l.nom)+(l.moto?' · '+esc(l.moto):'')+'</option>').join('')+'<option value="">Autre (pas une moto)</option></select></label>'+
+    grp('Type',chips('d_type',Object.entries(DEPT),'carburant'))+'<div class="grid2"><label class="f">Montant (F)<input id="d_m" inputmode="numeric" required></label><label class="f">Date<input id="d_date" type="date" value="'+today()+'"></label></div><label class="f">Note<input id="d_note" placeholder="Facultatif"></label><button class="b b-sun b-big" type="submit">Enregistrer</button></form>';}
+
+// ----- Réglages du capo -----
+function capoReglages(app){
+  const e=S.ent,lim=ACC&&ACC.limites||{zones:1};const link=ACC&&ACC.code&&!ACC.demo?SITE+'commande.html?c='+ACC.code:'';
+  const f=ACC&&ACC.formule||'essentiel';const FN={essentiel:'Essentiel · 5 000 F/mois · 3 livreurs, 1 zone',pro:'Pro · 10 000 F/mois · 10 livreurs, 3 zones',premium:'Premium · 15 000 F/mois · sans limite'};
+  app.innerHTML=accBanner()+
+    '<h3 style="margin-top:4px">Lien pour vos clients</h3><div class="card stack">'+(link?'<div class="linkbox">'+esc(link)+'</div><div class="row"><button class="b b-line b-sm" data-a="copyLink">Copier</button><a class="b b-go b-sm" target="_blank" rel="noopener" href="'+waShare('Pour vos livraisons et moto-taxi avec '+(e.nom||'nous')+' : envoyez un vocal ou écrivez ici 👉 '+link)+'">💬 Partager sur WhatsApp</a><button class="b b-line b-sm" data-a="codeEdit">Changer le nom du lien</button></div><div class="hint">Mettez ce lien dans votre statut WhatsApp, sur TikTok et Instagram. Les demandes arrivent toutes seules dans Courses.</div>':'<div class="hint">Dans la démo il n\'y a pas de lien. Créez votre compte pour avoir le vôtre.</div>')+'</div>'+
+    '<h3>Votre société</h3><form id="fEnt" class="card stack"><label class="f">Nom<input id="e_nom" value="'+esc(e.nom)+'"></label><label class="f">Numéro WhatsApp des clients<input id="e_tel" inputmode="tel" value="'+esc(telFmt(e.tel))+'"></label><button class="b b-sun" type="submit">Enregistrer</button></form>'+
+    '<h3>Photo de profil et couverture</h3><div class="card stack"><div class="hint">Facultatif. Elles s\'affichent en haut de votre page clients et dans l\'app, comme sur TikTok.</div>'+
+    '<div class="ip"><label class="ip-cover" for="e_cover">'+(imgOk(e.cover)?'<img src="'+esc(e.cover)+'" alt="Couverture">':'<span>+ Couverture</span>')+'</label><label class="ip-logo" for="e_logo">'+(imgOk(e.logo)?'<img src="'+esc(e.logo)+'" alt="Photo de profil">':'<span>+ Photo</span>')+'</label></div>'+
+    '<input id="e_cover" type="file" accept="image/*" class="vh"><input id="e_logo" type="file" accept="image/*" class="vh">'+
+    ((e.cover||e.logo)?'<div class="row">'+(e.cover?'<button class="b b-bad b-sm" data-a="imgDel" data-v="cover">Retirer la couverture</button>':'')+(e.logo?'<button class="b b-bad b-sm" data-a="imgDel" data-v="logo">Retirer la photo</button>':'')+'</div>':'')+'</div>'+
+    '<h3>Qui prend les courses ?</h3><div class="card stack">'+chips('e_mode',[['les2','Les deux'],['libre','Le premier disponible'],['capo','Le capo les envoie']],e.mode||'les2')+
+    '<div class="hint">'+(e.mode==='capo'?'Seul le capo (ou le capo de zone) envoie les courses. Les livreurs ne voient que les leurs.':e.mode==='libre'?'Les nouvelles courses vont à tous les livreurs disponibles de la zone : le premier qui touche « Je prends » la reçoit.':'Le capo peut envoyer une course à un livreur, sinon le premier disponible la prend.')+'</div></div>'+
+    '<h3>Sécurité des livraisons</h3><div class="card stack"><div class="small"><b>Code de livraison</b> : celui qui reçoit donne un code de 4 chiffres au livreur. Sans le bon code, le livreur ne peut pas marquer « Livré ».</div>'+
+    chips('e_code',[['vendeur','Si on encaisse pour un vendeur'],['toujours','Toujours'],['non','Jamais']],e.codeLiv||'vendeur')+
+    '<label class="sw"><span>Photo du colis obligatoire à la livraison</span><input type="checkbox" id="e_photo"'+(e.photoLiv?' checked':'')+' style="width:26px;height:26px"></label></div>'+
+    '<h3>Zones · '+zones().length+(lim.zones<100?' / '+lim.zones:'')+'</h3><div class="card stack"><div class="row">'+zones().map(z=>'<span class="b b-soft b-sm">'+esc(z)+(zones().length>1?' <button type="button" class="b b-sm" style="padding:0 4px;background:none" data-a="zDel" data-v="'+esc(z)+'" aria-label="Retirer '+esc(z)+'">✕</button>':'')+'</span>').join('')+'</div>'+
+    (zones().length<lim.zones?'<form id="fZone" class="row"><input id="z_new" placeholder="Ex : Dakar" style="flex:1 1 160px"><button class="b b-line b-sm" type="submit">Ajouter la zone</button></form>':'<div class="hint">Votre formule permet '+lim.zones+' zone'+(lim.zones>1?'s':'')+'. Pour plus de villes, passez à une formule plus grande.</div>')+'</div>'+
+    '<h3>Tarifs</h3><div class="card stack">'+(e.tarifs||[]).map(t=>'<div class="ca-row" style="align-items:center"><span>'+esc(t.z)+' · '+esc(t.lieu)+'</span><span class="row" style="align-items:center"><b>'+F(t.prix)+'</b><button class="b b-line b-sm" data-a="tDel" data-id="'+esc(t.id)+'" aria-label="Retirer ce tarif">✕</button></span></div>').join('')+
+    '<form id="fTarif" class="stack" style="margin-top:6px"><div class="grid2"><label class="f">Zone<select id="t_z">'+zoneOptions(V.zf||zones()[0])+'</select></label><label class="f">Prix (F)<input id="t_p" inputmode="numeric" placeholder="1000"></label></div><label class="f">Trajet<input id="t_l" placeholder="Ex : Touba ↔ Mbacké"></label><button class="b b-line" type="submit">Ajouter le tarif</button></form></div>'+
+    '<h3>Vocaux des clients</h3><div class="card stack"><div class="hint">Ils s\'effacent tout seuls après :</div>'+chips('e_voc',[[5,'5 jours'],[7,'7 jours']],e.vocalJours||7)+'</div>'+
+    pushCard()+
+    (MODE==='capo'?'<h3>Abonnement</h3><div class="card stack"><div class="kv"><span>Formule</span><b>'+esc(FN[f])+'</b></div><div class="kv"><span>'+(ACC&&ACC.paid_until&&ACC.paid_until>ACC.trial_end?'Payé jusqu\'au':'Essai gratuit jusqu\'au')+'</span><b>'+fdateL(ACC&&ACC.fin)+'</b></div><a class="b b-go" target="_blank" rel="noopener" href="'+waLink(SUPPORT,'Bonjour Seck Apps, je veux payer Teranga Livraison pour '+(e.nom||'')+'. Formule souhaitée : ')+'">💬 Payer ou changer de formule</a><div class="hint">Wave ou Orange Money au '+telFmt(SUPPORT)+'. L\'app se débloque dès que Seck Apps reçoit le paiement.</div></div>'+
+      '<div style="margin-top:16px" class="stack"><button class="b b-line" data-a="logout">Se déconnecter</button></div>':'<div style="margin-top:16px"><button class="b b-sun" data-a="demoOut">Créer mon compte</button></div>');
+}
+function pushCard(){
+  if(!('serviceWorker' in navigator)||!('PushManager' in window))return '<h3>Avis sur ce téléphone</h3><div class="card small">Ce navigateur ne reçoit pas les avis. Sur iPhone : ouvrez le lien dans Safari, « Partager › Sur l\'écran d\'accueil », puis ouvrez l\'app depuis l\'icône.</div>';
+  if(MODE==='demo')return '';
+  const ios=/iP(hone|ad|od)/.test(navigator.userAgent),home=!!(navigator.standalone||(window.matchMedia&&matchMedia('(display-mode: standalone)').matches));
+  if(ios&&!home)return '<h3>Avis sur ce téléphone</h3><div class="card small">Sur iPhone : dans Safari touchez <b>Partager</b> → <b>Sur l\'écran d\'accueil</b>. Ouvrez ensuite l\'app depuis l\'icône et revenez ici pour activer les avis.</div>';
+  return '<h3>Avis sur ce téléphone</h3><div class="card stack">'+(V.pushOn?'<div class="small">🔔 Avis activés : vous êtes prévenu même téléphone fermé.</div><button class="b b-line" data-a="pushTest">Envoyer un avis de test</button>':'<div class="small">Recevez un avis à chaque nouvelle course, même téléphone fermé.</div><button class="b b-go" data-a="pushOn">🔔 Activer les avis</button>')+'</div>';
+}
+
+// ----- Livreur -----
+function renderLivreur(){
+  const app=$('app');const me=lv(MV.me.id)||MV.me;
+  const mine=L('courses').filter(c=>c.lid===me.id&&actif(c)).sort((a,b)=>(a.t.cree||0)-(b.t.cree||0));
+  const libres=libreOk()?L('courses').filter(c=>c.statut==='nouvelle'&&c.zone===me.zone):[];
+  const k=caisse(me,today());const p=me.paie||{t:'pct'};
+  app.innerHTML='<button class="dispo '+(me.dispo?'on':'off')+'" data-a="dispo" aria-pressed="'+!!me.dispo+'"><span>'+(me.dispo?'Je suis disponible':'Je suis occupé')+'<small>'+(me.dispo?'Vous recevez les nouvelles courses':'Touchez pour recevoir des courses')+'</small></span><span class="knob" aria-hidden="true"></span></button>'+
+    '<h3>Mes courses · '+mine.length+'</h3><div class="list">'+(mine.length?mine.map(c=>courseCard(c,'mine')).join(''):'<div class="empty">Pas de course en cours.</div>')+'</div>'+
+    (libreOk()?'<h3>Nouvelles courses à '+esc(me.zone)+' · '+libres.length+'</h3><div class="list">'+(!me.dispo?'<div class="empty">Mettez-vous « disponible » pour voir et prendre les courses.</div>':libres.length?libres.map(c=>courseCard(c,'libre')).join(''):'<div class="empty">Pas de nouvelle course. Vous recevrez un avis.</div>')+'</div>':'<div class="note blue" style="margin-top:14px">Le capo vous envoie les courses. Vous recevez un avis.</div>')+
+    '<h3>Ma journée</h3><div class="card"><div class="ca-row"><span>Courses livrées</span><b>'+k.cs.length+'</b></div><div class="ca-row"><span>Total des livraisons</span><b>'+F(k.total)+'</b></div>'+(k.march?'<div class="ca-row"><span>Marchandise encaissée</span><b>'+F(k.march)+'</b></div>':'')+'<div class="ca-row"><span>Ma part</span><b>'+(p.t==='mois'?'Salaire du mois':F(k.partL))+'</b></div><div class="due"><span>'+(k.aVerser>=0?'À verser au patron':'Le patron me doit')+'</span><span class="v">'+F(Math.abs(k.aVerser))+'</span></div>'+(k.v?'<div class="pill p-prise" style="margin-top:8px">Versé ✓</div>':'')+'</div>'+
+    pushCard()+'<div style="margin-top:16px" class="stack"><button class="b b-line" data-a="mlogout">Sortir</button></div>';
+}
+function livreSheet(c){
+  const need=!!c.codeReq,ph=!!(S.ent.photoLiv);
+  openSheet('Livrer N° '+(c.no||''),'<form id="fLivre" class="stack" data-id="'+esc(c.id)+'">'+
+    (+c.march||(c.paie==='dest'&&+c.prix)?'<div class="cod">💰 À encaisser : '+F((c.paie==='dest'?+c.prix:0)+(+c.march||0))+(+c.march?' (dont '+F(c.march)+' pour le vendeur)':'')+'</div>':'')+
+    (need?'<label class="f">Code de celui qui reçoit<input id="lv_code" class="pinput" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••" required></label><div class="hint">Demandez le code à la personne quand elle a le colis en main.</div>':'')+
+    '<div class="f"><span>'+(ph?'Photo du colis livré (obligatoire)':'Photo du colis livré (facultatif)')+'</span><label class="b b-line">📷 Prendre la photo<input id="lv_photo" type="file" accept="image/*" capture="environment" hidden></label></div><img id="lv_prev" class="photo-prev" alt="Photo du colis" hidden>'+
+    '<button class="b b-done b-big" type="submit">✅ Confirmer la livraison</button></form>');
+}
+
+// ----- Écrans d'entrée -----
+function renderStart(){
+  $('app').innerHTML='<div class="start"><div class="hero"><div class="logo">'+logo(72)+'<div class="n" style="font-family:var(--display);font-weight:800;font-size:21px">Teranga Livraison</div></div><h1>Vos motos, vos livreurs, vos courses.<br>Tout dans une app.</h1><p>Demandes des clients par vocal ou par lien, livreurs avec un code, caisse du jour et argent des vendeurs. 7 jours gratuits.</p></div>'+
+    '<button class="b b-sun b-big" data-a="goAuth" data-v="su">Je suis le patron : créer mon compte</button>'+
+    '<button class="b b-line b-big" data-a="goAuth" data-v="in">J\'ai déjà un compte : entrer</button>'+
+    '<button class="b b-go b-big" data-a="goMLogin">🛵 Je suis livreur ou capo de zone</button>'+
+    '<button class="b b-soft" data-a="demo">Voir la démo avec des exemples</button>'+
+    '<div class="hint" style="text-align:center">Une app Seck Apps · aide : WhatsApp '+telFmt(SUPPORT)+'</div></div>';
+}
+function renderAuth(){const a=V.auth,su=a.su;
+  $('app').innerHTML='<div class="start"><div class="logo">'+logo(52)+'<div class="n" style="font-family:var(--display);font-weight:800;font-size:20px">Teranga Livraison</div></div>'+
+    '<div class="seg2" role="group"><button data-a="authMode" data-v="su" aria-pressed="'+su+'">Créer mon compte</button><button data-a="authMode" data-v="in" aria-pressed="'+!su+'">Entrer</button></div>'+
+    '<form id="fAuth" class="card auth">'+(su?'<label class="f">Nom de votre société<input id="au_nom" value="'+esc(a.nom)+'" placeholder="Ex : Seck Livraison" required></label><label class="f">Votre ville<input id="au_ville" value="'+esc(a.ville)+'" placeholder="Ex : Touba" required></label>':'')+
+    '<label class="f">Votre numéro<input id="au_tel" inputmode="tel" autocomplete="username" value="'+esc(a.tel)+'" placeholder="77 000 00 00" required></label>'+
+    '<label class="f">Mot de passe<input id="au_pw" type="password" autocomplete="'+(su?'new-password':'current-password')+'" required></label>'+
+    (su?'<label class="f">Répétez le mot de passe<input id="au_pw2" type="password" autocomplete="new-password" required></label>':'')+
+    '<div class="err" id="au_err"></div><button class="b b-sun b-big" type="submit" id="au_btn">'+(su?'Créer mon compte · 7 jours gratuits':'Entrer')+'</button></form>'+
+    '<button class="b b-line" data-a="toStart">‹ Retour</button>'+(su?'':'<div class="hint" style="text-align:center">Mot de passe oublié ? Écrivez à Seck Apps : '+telFmt(SUPPORT)+'</div>')+'</div>';
+}
+function renderMLogin(){const m=V.mlog;if(!m.code)m.code=Q.get('livreur')||lsGet('tl-lastcode','')||'';
+  $('app').innerHTML='<div class="start"><div class="logo">'+logo(52)+'<div class="n" style="font-family:var(--display);font-weight:800;font-size:20px">Espace livreur</div></div>'+
+    '<form id="fMLogin" class="card auth">'+(Q.get('livreur')?'':'<label class="f">Code de la société<input id="ml_code" value="'+esc(m.code)+'" autocapitalize="none" placeholder="Ex : seck-livraison" required><span class="hint" style="font-weight:500">C\'est le mot à la fin du lien que le capo vous a envoyé.</span></label>')+
+    '<label class="f">Votre numéro<input id="ml_tel" inputmode="tel" value="'+esc(m.tel)+'" placeholder="77 000 00 00" required></label>'+
+    '<label class="f">Votre code<input id="ml_pin" class="pinput" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="••••" required></label>'+
+    '<div class="err" id="ml_err"></div><button class="b b-go b-big" type="submit" id="ml_btn">Entrer</button></form>'+
+    '<button class="b b-line" data-a="toStart">‹ Retour</button></div>';
+}
+function renderLocked(){
+  $('app').innerHTML='<div class="locked"><div style="display:flex;justify-content:center">'+logo(72)+'</div><h2>'+(MODE==='locked'&&USER?'Votre abonnement est terminé':'Service fermé pour le moment')+'</h2>'+
+    (USER?'<p class="muted">Vos données sont gardées. Payez l\'abonnement et l\'app se débloque toute seule.</p><a class="b b-go b-big" target="_blank" rel="noopener" href="'+waLink(SUPPORT,'Bonjour Seck Apps, je veux payer mon abonnement Teranga Livraison.')+'">💬 Payer sur WhatsApp</a><div class="card small">Essentiel 5 000 F · Pro 10 000 F · Premium 15 000 F par mois · Wave ou Orange Money au '+telFmt(SUPPORT)+'</div><button class="b b-line" data-a="recheck">J\'ai payé : vérifier</button><button class="b b-line" data-a="logout">Se déconnecter</button>'
+    :'<p class="muted">Le capo doit renouveler l\'abonnement. Réessayez plus tard.</p><button class="b b-line" data-a="mlogout">Sortir</button>')+'</div>';
+}
+function renderMoi(app){const me=MV.me;app.innerHTML='<div class="card stack"><div class="lv"><div class="av">'+initials(me.nom)+'</div><div class="main"><div class="t">'+esc(me.nom)+'</div><div class="s">Capo de zone · '+esc(me.zone)+'</div></div></div></div>'+pushCard()+'<div style="margin-top:16px"><button class="b b-line" data-a="mlogout">Sortir</button></div>';}
+
+// ----- Démo : exemples -----
+function demoSeed(){
+  const d=new Date();const at=(h,m)=>{const x=new Date(d);x.setHours(h,m,0,0);return x.getTime();};
+  const C=o=>Object.assign({id:rnd(10),zone:'Touba',src:'tel',type:'colis',cli:{nom:'',tel:''},de:'',a:'',dest:{nom:'',tel:''},note:'',vocal:null,prix:1000,paie:'exp',mode:'cash',march:0,statut:'nouvelle',lid:'',t:{cree:at(9,0)},rendu:false,cl:''},o);
+  const s={ent:{nom:'Seck Livraison',tel:'770000000',zones:['Touba','Louga'],mode:'les2',vocalJours:7,codeLiv:'vendeur',photoLiv:false,
+    tarifs:[{id:'t1',z:'Touba',lieu:'Dans Touba',prix:1000},{id:'t2',z:'Touba',lieu:'Touba ↔ Mbacké',prix:2000},{id:'t3',z:'Louga',lieu:'Dans Louga',prix:1000}]},
+    courses:{},membres:{},versements:{},depenses:{}};
+  [{id:'l1',nom:'Modou Diop',tel:'770000101',zone:'Touba',moto:'Jakarta · TB 4512',role:'livreur',paie:{t:'pct',v:30},pin:'4821',dispo:true},
+   {id:'l2',nom:'Ibrahima Fall',tel:'780000102',zone:'Touba',moto:'TVS · TB 7730',role:'livreur',paie:{t:'jour',v:5000},pin:'3307',dispo:true},
+   {id:'l3',nom:'Cheikh Ndiaye',tel:'760000103',zone:'Louga',moto:'Jakarta · LG 2210',role:'livreur',paie:{t:'mois',v:75000},pin:'5590',dispo:false},
+   {id:'z1',nom:'Aliou Sarr',tel:'700000104',zone:'Louga',role:'zone',pin:'1164'}].forEach(m=>s.membres[m.id]=m);
+  [C({no:1001,cli:{nom:'Pape',tel:'770000210'},de:'Darou Minam',a:'Marché Ocass',statut:'livree',lid:'l2',t:{cree:at(8,0),prise:at(8,2),recup:at(8,15),livree:at(8,35)}}),
+   C({no:1002,cli:{nom:'Astou',tel:'770000211'},de:'Touba Mosquée',a:'Mbacké, Escale',prix:2000,mode:'wave',statut:'livree',lid:'l2',t:{cree:at(8,10),prise:at(8,40),recup:at(8,50),livree:at(9,5)}}),
+   C({no:1003,cli:{nom:'Fatou',tel:'770000201'},de:'Marché Ocass',a:'Darou Marnane',statut:'livree',lid:'l1',t:{cree:at(8,40),prise:at(8,45),recup:at(9,5),livree:at(9,30)}}),
+   C({no:1004,src:'lien',cli:{nom:'Boutique Awa (TikTok)',tel:'770000202'},de:'Keur Niang',a:'Ndamatou, rue 12',dest:{nom:'Mariama',tel:'780000203'},prix:1500,paie:'dest',march:15000,cl:'2741',statut:'livree',lid:'l2',t:{cree:at(9,10),prise:at(9,12),recup:at(9,40),livree:at(10,20)}}),
+   C({no:1005,cli:{nom:'Khady',tel:'770000205'},de:'Darou Khoudoss',a:'Gare routière',mode:'om',statut:'recuperee',lid:'l1',t:{cree:at(11,5),prise:at(11,8),recup:at(11,25)}}),
+   C({no:1006,src:'lien',cli:{nom:'',tel:'770000207'},prix:0,statut:'nouvelle',t:{cree:at(11,50)},depos:{lat:14.8556,lng:-15.8783}}),
+   C({no:1007,zone:'Louga',type:'personne',cli:{nom:'Aïda',tel:'770000208'},de:'Gare routière de Louga',a:'Artillerie',prix:500,statut:'nouvelle',t:{cree:at(12,5)}})].forEach(c=>s.courses[c.id]=c);
+  s.depenses.d1={id:'d1',lid:'l1',zone:'Touba',date:today(),type:'carburant',montant:3000,note:'Plein',t:at(8,0)};
+  return s;
+}
+
+// ===== Page des clients (commande.html?c=CODE) et page de celui qui reçoit (…&d=ID&k=TK) =====
+const CCODE=(Q.get('c')||'').toLowerCase();
+let PUB=lsGet('tl-pub-'+CCODE,null), MINE=lsGet('tl-mine-'+CCODE,[]), SUIVI={}, PV={city:'',mode:'',done:null,vocal:null,rec:false,recSec:0,micErr:false,pos:null,posBusy:false,sending:false};
+async function pubLoad(){try{const d=await rpc('liv_public',{p_code:CCODE});if(d&&d.ok){PUB=d;lsSet('tl-pub-'+CCODE,d);}else PUB={ok:false};}catch(e){if(!PUB)NETMSG=errMsg(e);}render();pubSuivi();}
+async function pubSuivi(){const act=MINE.filter(m=>!m.fin).slice(-8);for(const m of act){try{const s=await rpc('liv_suivi',{p_code:CCODE,p_id:m.id,p_tk:m.tk});if(s&&s.ok){SUIVI[m.id]=s;if(s.statut==='livree'||s.statut==='annulee')m.fin=1;}}catch(e){}}
+  lsSet('tl-mine-'+CCODE,MINE);if(MODE==='public'&&!PV.rec)renderKeepPub();}
+function renderKeepPub(){const y=window.scrollY;renderPublic();window.scrollTo(0,y);}
+function getPos(cb){if(!navigator.geolocation){toast('Ce téléphone ne donne pas la position');return cb(null);}
+  navigator.geolocation.getCurrentPosition(p=>cb({lat:+p.coords.latitude.toFixed(6),lng:+p.coords.longitude.toFixed(6),acc:Math.round(p.coords.accuracy)}),
+    e=>{toast(e&&e.code===1?'Position refusée : autorisez la position dans les réglages du téléphone':'Position introuvable : réessayez dehors');cb(null);},{enableHighAccuracy:true,timeout:15000,maximumAge:60000});}
+function renderPublic(){
+  const app=$('app');$('top').hidden=true;$('tabs').innerHTML='';
+  if(!PUB){app.innerHTML='<div class="loading" style="padding:40px;text-align:center">'+(NETMSG?esc(NETMSG):'<span class="spin"></span>')+'</div>';return;}
+  if(!PUB.ok){app.innerHTML='<div class="locked"><div style="display:flex;justify-content:center">'+logo(72)+'</div><h2>Lien introuvable</h2><p class="muted">Vérifiez le lien reçu, ou demandez-le de nouveau à la société.</p></div>';return;}
+  const e=PUB,zs=e.zones&&e.zones.length?e.zones:['Touba'];if(!PV.city||!zs.includes(PV.city))PV.city=zs[0];const zl=zs.map(esc).join(', ');
+  let h=imgOk(e.cover)?'<div class="cover"><img src="'+esc(e.cover)+'" alt=""><div class="cover-in">'+(imgOk(e.logo)?brandLogo(64,e.logo):'')+'<div style="min-width:0"><b>'+esc(e.nom)+'</b><span>Livraison de colis et moto-taxi · '+zl+'</span></div></div></div>'
+    :'<div class="hero"><div class="logo">'+brandLogo(72,e.logo)+'<div class="n" style="font-family:var(--display);font-weight:800;font-size:21px">'+esc(e.nom)+'</div></div><h1>On livre votre colis.<br>On vous transporte.</h1><p>À moto, à '+zl+'. Paiement espèces, Wave ou Orange Money.</p></div>';
+  if(!e.actif)return app.innerHTML=h+'<div class="note" style="margin-top:14px">Le service en ligne est fermé pour le moment. Appelez ou écrivez sur WhatsApp au <b class="num">'+telFmt(e.tel)+'</b>.</div>';
+  if(PV.done){const m=MINE.find(x=>x.id===PV.done);if(m)h+='<div class="card stack" style="margin-top:14px;border-color:var(--go)"><h2>Demande envoyée ✅</h2><div>Votre numéro de course : <span class="num">N° '+esc(m.no)+'</span></div><div class="hint">Un livreur va vous appeler. Suivez la course plus bas.</div>'+
+    (m.cl?'<div class="small">🔐 Code de livraison : <b class="code">'+esc(m.cl)+'</b>. Envoyez-le à celui qui reçoit : il le donne au livreur seulement quand il a le colis.</div>':'')+
+    '<a class="b b-go" target="_blank" rel="noopener" href="'+waShare(pubDestText(m))+'">💬 Envoyer le lien à celui qui reçoit</a><button class="b b-line" data-a="pNew">Faire une autre demande</button></div>';}
+  h+='<h3>Je suis à</h3><div class="chips" role="radiogroup">'+zs.map(z=>'<label><input type="radio" name="p_city" value="'+esc(z)+'"'+(PV.city===z?' checked':'')+'><span>📍 '+esc(z)+'</span></label>').join('')+'</div>';
+  h+='<h3>Comment voulez-vous demander ?</h3><div class="big4">'+
+    '<button class="b b-sun" data-a="pmode" data-v="vocal" aria-pressed="'+(PV.mode==='vocal')+'"><span class="i">🎤</span>Envoyer un vocal<small>Je parle, c\'est tout</small></button>'+
+    '<button class="b b-line" data-a="pmode" data-v="ecrire" aria-pressed="'+(PV.mode==='ecrire')+'"><span class="i">✍️</span>Écrire ma demande<small>1 minute</small></button>'+
+    '<a class="b b-line" href="'+waLink(e.tel,'Bonjour, je veux une livraison à '+PV.city+'.')+'" target="_blank" rel="noopener"><span class="i">💬</span>WhatsApp<small>'+telFmt(e.tel)+'</small></a>'+
+    '<a class="b b-line" href="'+telLink(e.tel)+'"><span class="i">📞</span>Appeler<small>'+telFmt(e.tel)+'</small></a></div>';
+  if(PV.mode)h+=PV.mode==='vocal'?pubVocal():pubForm();
+  const tar=(e.tarifs||[]).filter(t=>t.z===PV.city);
+  if(tar.length)h+='<h3>Prix à '+esc(PV.city)+'</h3><div class="card">'+tar.map(t=>'<div class="ca-row"><span>'+esc(t.lieu)+'</span><b>'+F(t.prix)+'</b></div>').join('')+'<div class="hint" style="margin-top:6px">Prix indicatifs. Le livreur vous confirme le prix.</div></div>';
+  const mine=MINE.slice().reverse().slice(0,8);
+  if(mine.length)h+='<h3>Mes courses</h3><div class="list">'+mine.map(suiviCard).join('')+'</div>';
+  h+='<div class="hint" style="text-align:center;margin-top:18px">Avec Teranga Livraison · Seck Apps</div>';
+  app.innerHTML=h;
+}
+function posBlock(){return '<div class="card stack" style="background:var(--sunk);border:0">'+(PV.pos?'<div class="small">📍 Position envoyée avec la demande (précision '+PV.pos.acc+' m). <button type="button" class="b b-line b-sm" data-a="posDel">Retirer</button></div>':
+  '<button type="button" class="b b-line" data-a="posGet"'+(PV.posBusy?' disabled':'')+'>'+(PV.posBusy?'<span class="spin"></span> Recherche…':'📍 Envoyer ma position (où on me prend)')+'</button><div class="hint">Le livreur arrive directement chez vous, sans chercher.</div>')+'</div>';}
+function pubVocal(){
+  if(PV.vocal)return '<div class="card stack" style="margin-top:12px"><h2>Votre vocal</h2><audio controls src="'+esc(PV.vocal.url)+'" style="width:100%"></audio>'+posBlock()+
+    '<label class="f">Mon numéro (pour vous rappeler)<input id="v_tel" inputmode="tel" placeholder="77 000 00 00" value="'+esc(lsGet('tl-montel',''))+'" style="font-size:22px;font-family:var(--display);font-weight:800;letter-spacing:.05em"></label>'+
+    '<div class="row"><button class="b b-line" data-a="vAgain">🔁 Recommencer</button><button class="b b-go b-big" data-a="vSend"'+(PV.sending?' disabled':'')+'>'+(PV.sending?'<span class="spin"></span> Envoi…':'Envoyer le vocal')+'</button></div></div>';
+  return '<div class="card stack" style="margin-top:12px;text-align:center"><div>Dites où on prend, où on livre, et ce qu\'on transporte.</div>'+
+    '<button class="recbtn'+(PV.rec?' on':'')+'" data-a="rec" aria-pressed="'+PV.rec+'">'+(PV.rec?'■ Arrêter':'● Parler')+'</button><div class="timer" aria-live="polite">0:'+pad(PV.recSec)+' / 1:00</div>'+
+    (PV.micErr?'<div class="note">Le micro ne marche pas ici. Autorisez le micro pour ce site, ou envoyez votre vocal sur WhatsApp.</div>':'<div class="hint">Touchez une fois pour parler, encore une fois pour arrêter. 1 minute au plus.</div>')+'</div>';
+}
+function pubForm(){const t=lsGet('tl-montel','');
+  return '<form id="fClient" class="card stack" style="margin-top:12px">'+grp('Pour quoi ?',chips('k_type',[['colis','📦 Un colis'],['personne','🛵 Me transporter']],'colis'))+
+    '<label class="f">Où on prend ?<input id="k_de" placeholder="Quartier, repère" required></label>'+posBlock()+
+    '<label class="f">Où on livre ?<input id="k_a" placeholder="Quartier, repère" required></label>'+
+    '<label class="f">Mon numéro<input id="k_tel" inputmode="tel" placeholder="77 000 00 00" value="'+esc(t)+'" required></label>'+
+    '<label class="f">Numéro de celui qui reçoit<input id="k_dest" inputmode="tel" placeholder="Facultatif"></label>'+
+    grp('Qui paie la livraison ?',chips('k_paie',[['exp','Moi'],['dest','Celui qui reçoit']],'exp'))+
+    grp('Paiement',chips('k_mode',[['cash','Espèces'],['wave','Wave'],['om','Orange Money']],'cash'))+
+    '<label class="f">Je suis vendeur : argent à encaisser (F)<input id="k_march" inputmode="numeric" placeholder="0 si rien"><span class="hint" style="font-weight:500">Le livreur encaisse le prix de votre article et on vous le rend.</span></label>'+
+    '<button class="b b-go b-big" type="submit"'+(PV.sending?' disabled':'')+'>'+(PV.sending?'<span class="spin"></span> Envoi…':'Envoyer ma demande')+'</button></form>';
+}
+function pubDestText(m){return 'Bonjour, je vous envoie un colis avec '+((PUB&&PUB.nom)||'Teranga Livraison')+' (course N° '+m.no+').'+(m.cl?' Votre code de livraison : '+m.cl+'. Donnez-le au livreur seulement quand vous avez le colis.':'')+' Touchez ce lien pour envoyer votre position au livreur : '+SITE+'commande.html?c='+CCODE+'&d='+m.id+'&k='+m.dtk;}
+function suiviCard(m){
+  const s=SUIVI[m.id]||{statut:'nouvelle',t:{cree:m.t},type:'colis'};const order=['nouvelle','prise','recuperee','livree'];const i=order.indexOf(s.statut);const T=s.t||{};
+  if(s.statut==='annulee')return '<div class="card"><b>N° '+esc(m.no)+'</b> · <span class="pill p-annulee">Annulée</span></div>';
+  const steps=[['Demande reçue',hhmm(T.cree)],['Un livreur arrive',hhmm(T.prise)],[s.type==='personne'?'Vous êtes en route':'Colis récupéré',hhmm(T.recup)],[s.type==='personne'?'Arrivé':'Livré',hhmm(T.livree)]];
+  return '<div class="card stack"><div class="c-head"><span class="c-no">N° '+esc(m.no)+'</span><span class="c-meta">'+esc(s.zone||'')+(s.de?' · '+esc(s.de):'')+'</span></div><div class="steps">'+steps.map(([x,hh],k)=>'<div class="step'+(k<=i?' ok':'')+(k===i?' now':'')+'"><span class="d" aria-hidden="true"></span><div><b>'+x+'</b>'+(k<=i&&hh?' <span class="muted small">'+hh+'</span>':'')+'</div></div>').join('')+'</div>'+
+    (s.livreur&&s.statut!=='livree'?'<div class="who"><span>🛵 '+esc(s.livreur.nom)+' · <span class="num" style="font-size:15px">'+telFmt(s.livreur.tel)+'</span></span><a class="b b-line b-sm" href="'+telLink(s.livreur.tel)+'">📞 Appeler</a></div>':'')+
+    (m.cl&&s.statut!=='livree'?'<div class="small">🔐 Code de livraison : <b class="code">'+esc(m.cl)+'</b></div>':'')+'</div>';
+}
+// enregistrement du vocal (débit bas pour un petit fichier)
+let MR=null,recTimer=null,recT0=0;
+async function recStart(){
+  try{if(!navigator.mediaDevices||!window.MediaRecorder)throw new Error('no');
+    const st=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}});
+    const types=['audio/mp4','audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus'];const mt=types.find(t=>MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t));
+    const opt={audioBitsPerSecond:24000};if(mt)opt.mimeType=mt;MR=new MediaRecorder(st,opt);const ch=[];
+    MR.ondataavailable=e=>{if(e.data&&e.data.size)ch.push(e.data);};
+    MR.onstop=()=>{st.getTracks().forEach(t=>t.stop());clearInterval(recTimer);const dur=Math.max(1,Math.round((Date.now()-recT0)/1000));
+      const b=new Blob(ch,{type:MR.mimeType||mt||'audio/mp4'});const fr=new FileReader();fr.onload=()=>{PV.vocal={url:fr.result,mime:(MR.mimeType||mt||'audio/mp4').split(';')[0],dur:Math.min(60,dur)};PV.rec=false;renderPublic();};fr.readAsDataURL(b);};
+    MR.start(1000);recT0=Date.now();PV.rec=true;PV.recSec=0;renderPublic();
+    recTimer=setInterval(()=>{PV.recSec=Math.min(60,Math.floor((Date.now()-recT0)/1000));const t=document.querySelector('.timer');if(t)t.textContent='0:'+pad(Math.min(59,PV.recSec))+' / 1:00';if(PV.recSec>=60)recStop();},250);
+  }catch(e){PV.micErr=true;PV.rec=false;renderPublic();}
+}
+function recStop(){try{if(MR&&MR.state!=='inactive')MR.stop();}catch(e){}}
+async function pubSend(p){
+  if(PV.sending)return;PV.sending=true;renderKeepPub();
+  try{const r=await rpc('liv_demande',{p_code:CCODE,p});lsSet('tl-montel',telFmt(p.cli.tel));
+    MINE.push({id:r.id,no:r.no,tk:r.tk,dtk:r.dtk,cl:r.cl||'',t:Date.now()});lsSet('tl-mine-'+CCODE,MINE);
+    PV.done=r.id;PV.mode='';PV.vocal=null;PV.pos=null;PV.recSec=0;buzz();window.scrollTo(0,0);}
+  catch(e){toast(errMsg(e));}
+  PV.sending=false;renderPublic();pubSuivi();
+}
+// ----- celui qui reçoit -----
+let DST=null,DV={busy:false,sent:false};
+async function destLoad(){try{DST=await rpc('liv_dest',{p_code:CCODE,p_id:Q.get('d'),p_tk:Q.get('k')});}catch(e){NETMSG=errMsg(e);}try{if(!PUB)PUB=await rpc('liv_public',{p_code:CCODE});}catch(e){}render();}
+function renderDest(){
+  const app=$('app');$('top').hidden=true;$('tabs').innerHTML='';
+  if(!DST){app.innerHTML='<div class="loading" style="padding:40px;text-align:center">'+(NETMSG?esc(NETMSG):'<span class="spin"></span>')+'</div>';return;}
+  if(!DST.ok){app.innerHTML='<div class="locked"><div style="display:flex;justify-content:center">'+logo(72)+'</div><h2>Lien introuvable</h2><p class="muted">Ce lien n\'est plus valable.</p></div>';return;}
+  const d=DST,fin=d.statut==='livree'||d.statut==='annulee';
+  app.innerHTML='<div class="hero"><div class="logo">'+brandLogo(56,PUB&&PUB.logo)+'<div class="n" style="font-family:var(--display);font-weight:800;font-size:19px">'+esc(PUB&&PUB.nom||'Teranga Livraison')+'</div></div><h1>'+(d.statut==='livree'?'Colis livré ✅':d.statut==='annulee'?'Course annulée':'Un colis arrive pour vous')+'</h1><p>Course N° '+esc(d.no)+(d.exp?' · de la part de '+esc(d.exp):'')+'</p></div>'+
+    (d.cl&&!fin?'<h3>Votre code de livraison</h3><div class="codebig">'+esc(d.cl)+'</div><div class="hint" style="text-align:center">Donnez ce code au livreur seulement quand vous avez le colis en main.</div>':'')+
+    (fin?'':'<h3>Aidez le livreur à vous trouver</h3><div class="card stack">'+(d.apos||DV.sent?'<div class="small">📍 Votre position a été envoyée au livreur. Merci !</div><button class="b b-line" data-a="dPos">Renvoyer ma position</button>':'<button class="b b-go b-big" data-a="dPos"'+(DV.busy?' disabled':'')+'>'+(DV.busy?'<span class="spin"></span> Recherche…':'📍 Envoyer ma position')+'</button><div class="hint">Le téléphone demande l\'autorisation : touchez « Autoriser ».</div>')+'</div>')+
+    (d.livreur&&!fin?'<h3>Votre livreur</h3><div class="card who"><span>🛵 '+esc(d.livreur.nom)+' · <span class="num" style="font-size:15px">'+telFmt(d.livreur.tel)+'</span></span><a class="b b-line b-sm" href="'+telLink(d.livreur.tel)+'">📞 Appeler</a></div>':'')+
+    '<div class="hint" style="text-align:center;margin-top:18px">Avec Teranga Livraison · Seck Apps</div>';
+}
+
+// ===== Vocaux et photos (chargés seulement quand on les ouvre) =====
+const MEDIA={};
+async function getMedia(id,kind){const k=id+':'+kind;if(MEDIA[k])return MEDIA[k];
+  if(MODE==='demo')return null;
+  const m=MODE==='capo'?await rpc('liv_media_get',{p_id:id,p_kind:kind}):await mcall('media',id,{kind});
+  if(!m||!m.data)return null;MEDIA[k]='data:'+(m.mime||'audio/mp4')+';base64,'+m.data;return MEDIA[k];}
+async function playVocal(id){const box=$('voc-'+id);if(!box)return;const btn=box.querySelector('button');if(btn){btn.disabled=true;btn.innerHTML='<span class="spin"></span>';}
+  try{const u=await getMedia(id,'vocal');if(!u){box.innerHTML='🎤 '+(MODE==='demo'?'Dans la démo il n\'y a pas de vocal à écouter.':'Vocal supprimé ('+(S.ent.vocalJours||7)+' jours passés).');return;}
+    box.innerHTML='🎤 Vocal du client<audio controls autoplay src="'+u+'"></audio>';}
+  catch(e){toast(errMsg(e));if(btn){btn.disabled=false;btn.textContent='▶️ Écouter';}}}
+
+// ===== Logo et couverture : envoyés dans le stockage, l'adresse va dans les réglages =====
+let UPLS=0;
+function uploadImgs(){if(MODE!=='capo'||!USER||!SB||UPLS)return;const ks=['logo','cover'].filter(k=>/^data:/.test(S.ent[k]||''));if(!ks.length||!navigator.onLine)return;UPLS=1;
+  ks.reduce((pr,k)=>pr.then(()=>{const src=S.ent[k],path=USER.id+'/'+k+'-'+Date.now()+'.jpg';
+    return SB.storage.from('livraison').upload(path,dataUrlBlob(src),{contentType:'image/jpeg',upsert:false}).then(r=>{if(r.error)throw r.error;
+      const url=SB.storage.from('livraison').getPublicUrl(path).data.publicUrl;if(S.ent[k]===src)put('set','ent',{[k]:url});});}),Promise.resolve())
+  .catch(e=>{if(!isNet(e))toast('Image non envoyée : '+errMsg(e));}).then(()=>{UPLS=0;render();});}
+
+// ===== Avis sur le téléphone =====
+let SWREG=null;
+function swReady(){if(SWREG)return Promise.resolve(SWREG);if(!('serviceWorker' in navigator))return Promise.reject(new Error('no sw'));
+  return navigator.serviceWorker.register('sw.js').then(r=>navigator.serviceWorker.ready.then(()=>{SWREG=r;return r;}));}
+function b64u(s){s=String(s).replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';const r=atob(s);return Uint8Array.from(r,c=>c.charCodeAt(0));}
+async function pushCheck(){try{if(!('PushManager' in window)||Notification.permission!=='granted')return;const r=await swReady();const s=await r.pushManager.getSubscription();
+  if(s){V.pushOn=true;await pushSave(s);renderKeep();}}catch(e){}}
+async function pushSave(s){if(MODE==='capo')return rpc('liv_push_capo',{p_sub:s.toJSON()});if(MODE==='membre')return mcall('push','',{sub:s.toJSON()});}
+async function pushEnable(){try{const perm=await Notification.requestPermission();if(perm!=='granted'){toast('Avis refusés : autorisez-les dans les réglages du téléphone');return;}
+  const r=await swReady();let s=await r.pushManager.getSubscription();if(!s)s=await r.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(PUSH_PUB)});
+  await pushSave(s);V.pushOn=true;render();toast('Avis activés ✅');pushTest();}catch(e){toast('Je n\'arrive pas à activer les avis : '+errMsg(e));}}
+async function pushTest(){try{if(MODE==='capo')await rpc('liv_push_capo_test');else await mcall('push_test');toast('Avis de test envoyé');}catch(e){toast(errMsg(e));}}
+
+// ===== Clics =====
+document.addEventListener('click',async e=>{
+  const el=e.target.closest('[data-a]');if(!el)return;const a=el.dataset.a,id=el.dataset.id;
+  if(a==='closeBg'){if(e.target===el)closeSheet();return;}
+  if(a==='close')return closeSheet();
+  // entrée
+  if(a==='goAuth'){V.auth.su=el.dataset.v==='su';MODE='auth';render();window.scrollTo(0,0);return;}
+  if(a==='authMode'){V.auth.su=el.dataset.v==='su';render();return;}
+  if(a==='goMLogin'){MODE='mlogin';render();return;}
+  if(a==='toStart'){MODE='start';render();return;}
+  if(a==='demo'){startDemo();return;}
+  if(a==='demoOut'){MODE='auth';V.auth.su=true;S={ent:{},courses:{},membres:{},versements:{},depenses:{}};render();window.scrollTo(0,0);return;}
+  if(a==='logout'){logout();return;}
+  if(a==='mlogout'){clearInterval(MPOLL);lsDel('tl-mem');lsDel('tl-mv');MQ=[];lsSet('tl-mq',MQ);MEM=null;MV=null;MODE='start';render();return;}
+  if(a==='recheck'){refreshAcc().then(()=>{if(ACC&&ACC.actif)startCapo();});return;}
+  // capo
+  if(a==='tab'){V.tab=el.dataset.v;render();window.scrollTo(0,0);return;}
+  if(a==='zf'){V.zf=el.dataset.v;render();return;}
+  if(a==='cf'){V.cf=el.dataset.v;render();return;}
+  if(a==='new')return openSheet('Nouvelle course',courseForm(null));
+  if(a==='edit'){const c=crs(id);if(c)openSheet('Modifier N° '+(c.no||''),courseForm(c));return;}
+  if(a==='assign'){const c=crs(id);if(c)assignSheet(c);return;}
+  if(a==='doAssign'){closeSheet();await doAssign(id,el.dataset.l);render();return;}
+  if(a==='cancel'){if(el.dataset.arm!=='1'){el.dataset.arm='1';el.textContent='Sûr ? Touchez encore';return;}await doCancel(id);render();return;}
+  if(a==='rendu'){await doRendu(id);render();return;}
+  if(a==='stepCapo'){const c=crs(id);if(!c)return;if(el.dataset.arm!=='1'){el.dataset.arm='1';el.textContent='Sûr ? Touchez encore';return;}
+    if(isZoneMgr())await mdo(c.statut==='prise'?'recup':'livre',id,{},'Fait');else doStep(id,c.statut==='prise'?'recuperee':'livree');render();return;}
+  if(a==='recu'){const c=crs(id);if(!c)return;const t=recuText(c);openSheet('Reçu N° '+(c.no||''),'<div class="card" style="white-space:pre-wrap;user-select:all">'+esc(t)+'</div><div class="row" style="margin-top:10px"><button class="b b-line" data-a="copyTxt" data-t="'+esc(t)+'">Copier</button>'+(c.cli&&c.cli.tel?'<a class="b b-go" target="_blank" rel="noopener" href="'+waLink(c.cli.tel,t)+'">💬 Envoyer au client</a>':'')+'</div>');return;}
+  if(a==='destLink'){const c=crs(id);if(!c)return;const t=destText(c);openSheet('Lien pour celui qui reçoit','<div class="card" style="white-space:pre-wrap;user-select:all">'+esc(t)+'</div><div class="row" style="margin-top:10px"><button class="b b-line" data-a="copyTxt" data-t="'+esc(t)+'">Copier</button><a class="b b-go" target="_blank" rel="noopener" href="'+waLink(c.dest.tel,t)+'">💬 Envoyer sur WhatsApp</a></div><div class="hint" style="margin-top:8px">Il touche le lien, envoie sa position, et le livreur la reçoit tout de suite.</div>');return;}
+  if(a==='copyTxt'){copy(el.dataset.t);return;}
+  if(a==='voc'){playVocal(id);return;}
+  if(a==='photo'){try{const u=await getMedia(id,'photo');openSheet('Photo de livraison',u?'<img class="photo-prev" src="'+u+'" alt="Colis livré" style="max-height:none">':'<div class="empty">Photo supprimée ou pas encore arrivée.</div>');}catch(err){toast(errMsg(err));}return;}
+  if(a==='lvNew'){const lim=ACC&&ACC.limites?ACC.limites.livreurs:3;openSheet('Ajouter',lvForm(null)+(livreurs().length>=lim?'<div class="note" style="margin-top:10px">Votre formule permet '+lim+' livreurs. Vous pouvez ajouter un capo de zone, ou passer à une formule plus grande pour plus de livreurs.</div>':''));return;}
+  if(a==='lvEdit'){const l=lv(id);if(l)openSheet('Modifier '+l.nom,lvForm(l));return;}
+  if(a==='lvPin'){const l=lv(id);if(!l)return;put('membres',id,{pin:pin4()});closeSheet();render();toast('Nouveau code : '+lv(id).pin);return;}
+  if(a==='lvDel'){if(el.dataset.arm!=='1'){el.dataset.arm='1';el.textContent='Sûr ? Touchez encore';return;}
+    L('courses').forEach(c=>{if(c.lid===id&&actif(c))put('courses',c.id,{lid:'',statut:'nouvelle',par:'capo'});});del('membres',id);closeSheet();render();toast('Retiré');return;}
+  if(a==='lvCode'){const l=lv(id);if(!l)return;if(MODE==='demo'){toast('Dans la démo on n\'envoie pas d\'accès');return;}const t=accesText(l);
+    openSheet('Accès de '+l.nom,'<div class="card" style="white-space:pre-wrap;user-select:all">'+esc(t)+'</div><div class="row" style="margin-top:10px"><button class="b b-line" data-a="copyTxt" data-t="'+esc(t)+'">Copier</button><a class="b b-go" target="_blank" rel="noopener" href="'+waLink(l.tel,t)+'">💬 Envoyer sur WhatsApp</a></div>');return;}
+  if(a==='day'){const d=new Date((V.cd||today())+'T12:00:00');d.setDate(d.getDate()+(+el.dataset.v));const s=iso(d);if(s<=today()){V.cd=s;render();}return;}
+  if(a==='mon'){const [y,m]=(V.cm||today().slice(0,7)).split('-').map(Number);const d=new Date(y,m-1+(+el.dataset.v),15);const s=iso(d).slice(0,7);if(s<=today().slice(0,7)){V.cm=s;render();}return;}
+  if(a==='verse'){const l=lv(id);if(!l)return;const k=caisse(l,V.cd||today());await doVerse(id,V.cd||today(),k.aVerser);render();return;}
+  if(a==='unverse'){await doUnverse(id,V.cd||today());render();return;}
+  if(a==='depNew'){if(!livreurs().length){toast('Ajoutez d\'abord un livreur');}openSheet('Dépense',depForm());return;}
+  if(a==='depDel'){if(el.dataset.arm!=='1'){el.dataset.arm='1';el.textContent='Sûr ?';return;}await doDepenseDel(id);render();return;}
+  if(a==='zDel'){e.stopPropagation();const z=el.dataset.v;if(zones().length<2)return;put('set','ent',{zones:zones().filter(x=>x!==z)});if(V.zf===z)V.zf='';render();toast('Zone retirée');return;}
+  if(a==='tDel'){put('set','ent',{tarifs:(S.ent.tarifs||[]).filter(t=>t.id!==id)});render();return;}
+  if(a==='imgDel'){put('set','ent',{[el.dataset.v]:''});render();return;}
+  if(a==='copyLink'){copy(SITE+'commande.html?c='+ACC.code,'Lien copié');return;}
+  if(a==='codeEdit'){openSheet('Nom du lien','<form id="fCode" class="stack"><label class="f">Le mot à la fin du lien<input id="c_code" value="'+esc(ACC.code)+'" autocapitalize="none"></label><div class="hint">Lettres, chiffres et tirets. Attention : l\'ancien lien et l\'accès des livreurs changent aussi. Renvoyez-leur l\'accès.</div><div class="err" id="c_err"></div><button class="b b-sun b-big" type="submit">Enregistrer</button></form>');return;}
+  if(a==='pushOn'){pushEnable();return;}
+  if(a==='pushTest'){pushTest();return;}
+  // livreur
+  if(a==='dispo'){const me=lv(MV.me.id)||MV.me;await mdo('dispo','',{v:!me.dispo});return;}
+  if(a==='take'){await mdo('prendre',id,{},'Course pour vous ✓');buzz();return;}
+  if(a==='mstep'){await mdo('recup',id,{},'Colis récupéré');return;}
+  if(a==='mlivre'){const c=crs(id);if(!c)return;if(c.codeReq||S.ent.photoLiv)return livreSheet(c);
+    if(el.dataset.arm!=='1'){el.dataset.arm='1';el.textContent='Sûr ? Touchez encore pour confirmer';return;}await mdo('livre',id,{},'Course livrée ✓');return;}
+  // page clients
+  if(a==='pmode'){PV.mode=PV.mode===el.dataset.v?'':el.dataset.v;PV.done=null;renderPublic();return;}
+  if(a==='pNew'){PV.done=null;PV.mode='';renderPublic();window.scrollTo(0,0);return;}
+  if(a==='rec'){if(PV.rec)recStop();else recStart();return;}
+  if(a==='vAgain'){PV.vocal=null;PV.recSec=0;renderPublic();return;}
+  if(a==='posGet'){PV.posBusy=true;renderKeepPub();getPos(p=>{PV.posBusy=false;PV.pos=p;if(p)toast('Position ajoutée 📍');renderKeepPub();});return;}
+  if(a==='posDel'){PV.pos=null;renderKeepPub();return;}
+  if(a==='vSend'){const tel=tel9(($('v_tel')||{}).value);if(tel.length<9){toast('Écrivez votre numéro (9 chiffres)');return;}
+    const v=PV.vocal;const b64=String(v.url).split(',')[1]||'';if(b64.length>1350000){toast('Vocal trop long : recommencez plus court');return;}
+    pubSend({zone:PV.city,cli:{tel},vocal:{data:b64,mime:v.mime,dur:v.dur},depos:PV.pos||undefined});return;}
+  if(a==='dPos'){DV.busy=true;render();getPos(async p=>{DV.busy=false;if(!p){render();return;}
+    try{await rpc('liv_dest_pos',{p_code:CCODE,p_id:Q.get('d'),p_tk:Q.get('k'),p_lat:p.lat,p_lng:p.lng});DV.sent=true;toast('Position envoyée au livreur ✅');}catch(err){toast(errMsg(err));}render();});return;}
+});
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if((t.id==='e_cover'||t.id==='e_logo')&&t.files&&t.files[0]){const k=t.id==='e_cover'?'cover':'logo';readPhoto(t.files[0],u=>{put('set','ent',{[k]:u});render();toast(k==='cover'?'Couverture ajoutée':'Photo ajoutée');uploadImgs();},k==='cover'?1280:480,.82);t.value='';return;}
+  if(t.id==='lv_photo'&&t.files&&t.files[0]){readPhoto(t.files[0],u=>{const im=$('lv_prev');if(im){im.src=u;im.hidden=false;im.dataset.u=u;}},900,.7);return;}
+  if(t.id==='f_tarif'&&t.value){const p=$('f_prix');if(p)p.value=t.value;return;}
+  if(t.name==='l_role'){const w=$('l_paiew'),m=$('l_motow');if(w)w.hidden=t.value==='zone';if(m)m.hidden=t.value==='zone';return;}
+  if(t.name==='l_pt'){const lab=$('l_vlab'),pv=$('l_pv');if(lab)lab.textContent=t.value==='pct'?'Sa part sur chaque course (%)':t.value==='jour'?'Somme qu\'il verse chaque jour (F)':'Salaire du mois (F)';if(pv)pv.value=t.value==='pct'?30:t.value==='jour'?5000:75000;return;}
+  if(t.name==='e_mode'){put('set','ent',{mode:t.value});render();toast('Réglage enregistré');return;}
+  if(t.name==='e_code'){put('set','ent',{codeLiv:t.value});toast('Réglage enregistré');return;}
+  if(t.id==='e_photo'){put('set','ent',{photoLiv:t.checked});toast('Réglage enregistré');return;}
+  if(t.name==='e_voc'){put('set','ent',{vocalJours:+t.value});toast('Réglage enregistré');return;}
+  if(t.name==='p_city'){PV.city=t.value;renderKeepPub();return;}
+});
+document.addEventListener('input',e=>{const t=e.target;
+  if(t.id==='f_clitel'&&!$('fCourse').dataset.id){const c=clientHint(t.value),h=$('f_hint');if(!h)return;
+    if(c){h.hidden=false;h.innerHTML='Client déjà connu : <b>'+esc(c.cli.nom||'sans nom')+'</b>'+(c.de?' · dernière adresse « '+esc(c.de)+' »':'')+' <button type="button" class="b b-line b-sm" data-a="useHint">Remplir</button>';h.dataset.id=c.id;}
+    else if(isZoneMgr()&&tel9(t.value).length===9){mcall('client','',{tel:tel9(t.value)}).then(x=>{if(x&&(x.nom||x.de)){h.hidden=false;h.innerHTML='Client déjà connu : <b>'+esc(x.nom||'sans nom')+'</b>'+(x.de?' · « '+esc(x.de)+' »':'')+' <button type="button" class="b b-line b-sm" data-a="useHintZ" data-n="'+esc(x.nom||'')+'" data-d="'+esc(x.de||'')+'">Remplir</button>';}}).catch(()=>{});}
+    else h.hidden=true;}});
+document.addEventListener('click',e=>{const el=e.target.closest('[data-a="useHint"],[data-a="useHintZ"]');if(!el)return;
+  if(el.dataset.a==='useHint'){const c=crs($('f_hint').dataset.id);if(!c)return;$('f_clinom').value=c.cli.nom||'';if(!$('f_de').value)$('f_de').value=c.de||'';}
+  else{$('f_clinom').value=el.dataset.n||'';if(!$('f_de').value)$('f_de').value=el.dataset.d||'';}$('f_hint').hidden=true;});
+
+// ===== Formulaires =====
+document.addEventListener('submit',async e=>{
+  e.preventDefault();const f=e.target;
+  if(f.id==='fAuth'){const a=V.auth,su=a.su;a.nom=fv('au_nom');a.ville=fv('au_ville');a.tel=fv('au_tel');const pw=fv('au_pw'),pw2=fv('au_pw2'),ph=tel9(a.tel),say=t=>{$('au_err').textContent=t;};
+    if(ph.length<9)return say('Numéro invalide (9 chiffres)');if(pw.length<6)return say('Mot de passe : 6 caractères minimum');if(su&&pw!==pw2)return say('Les deux mots de passe ne sont pas pareils');
+    if(su&&(!a.nom.trim()||!a.ville.trim()))return say('Écrivez le nom de la société et la ville');
+    const b=$('au_btn');b.disabled=true;b.innerHTML='<span class="spin"></span> Patientez…';say('');
+    whenSB(async()=>{try{const r=su?await SB.auth.signUp({email:ph+MAIL_DOM,password:pw}):await SB.auth.signInWithPassword({email:ph+MAIL_DOM,password:pw});
+        if(r.error)throw r.error;if(!r.data.session)throw new Error('Compte créé mais pas encore actif : écrivez à Seck Apps');USER=r.data.session.user;
+        if(su){ACC=await rpc('liv_inscription',{p_nom:a.nom.trim(),p_ville:a.ville.trim()});lsSet(K('acc'),ACC);}
+        V.auth={su:false,nom:'',ville:'',tel:'',pw:'',pw2:''};startCapo();}
+      catch(err){b.disabled=false;b.textContent=su?'Créer mon compte · 7 jours gratuits':'Entrer';say(errMsg(err));}});return;}
+  if(f.id==='fMLogin'){const m=V.mlog;m.code=(Q.get('livreur')||fv('ml_code')).trim().toLowerCase();m.tel=fv('ml_tel');const pin=digits(fv('ml_pin')),say=t=>{$('ml_err').textContent=t;};
+    if(!m.code)return say('Écrivez le code de la société');if(tel9(m.tel).length<9)return say('Numéro invalide');if(pin.length<4)return say('Code : 4 chiffres');
+    const b=$('ml_btn');b.disabled=true;b.innerHTML='<span class="spin"></span>';
+    whenSB(async()=>{try{const v=await mLogin(m.code,tel9(m.tel),pin);if(!v||!v.ok)throw new Error(v&&v.erreur||'Numéro ou code incorrect');
+        MEM={code:m.code,tel:tel9(m.tel),pin};lsSet('tl-mem',MEM);lsSet('tl-lastcode',m.code);setMV(v);startMembre();}
+      catch(err){b.disabled=false;b.textContent='Entrer';say(errMsg(err));}});return;}
+  if(f.id==='fCourse'){const o=readCourseForm();if(o.cli.tel.length<9&&!o.de){toast('Mettez au moins le téléphone du client ou l\'adresse');return;}
+    if(f.dataset.id){await doEditCourse(f.dataset.id,o);closeSheet();render();return;}
+    const to=fv('f_to');const ok=await doNewCourse(Object.assign(o,{src:fv('f_src')||'tel'}),to);if(ok){closeSheet();V.cf='actives';render();}return;}
+  if(f.id==='fLv'){const nom=fv('l_nom').trim(),tel=tel9(fv('l_tel'));if(!nom||tel.length<9){toast('Écrivez le nom et le numéro (9 chiffres)');return;}
+    const role=fv('l_role')||'livreur';const o={nom,tel,zone:fv('l_zone'),moto:fv('l_moto').trim(),role,paie:{t:fv('l_pt')||'pct',v:Math.round(num(fv('l_pv')))},acces:$('l_acces').checked};
+    if(L('membres').some(m=>m.id!==f.dataset.id&&tel9(m.tel)===tel)){toast('Ce numéro est déjà utilisé par un autre livreur');return;}
+    if(f.dataset.id){put('membres',f.dataset.id,o);}
+    else{const lim=ACC&&ACC.limites?ACC.limites.livreurs:3;if(role==='livreur'&&livreurs().length>=lim){toast('Votre formule permet '+lim+' livreurs');return;}
+      const id=rnd(12);put('membres',id,Object.assign({id,pin:pin4(),dispo:false},o));closeSheet();render();const l=lv(id);if(MODE!=='demo')setTimeout(()=>{const t=accesText(l);openSheet('Accès de '+l.nom,'<div class="note">Ajouté ✅ Envoyez-lui son accès :</div><div class="card" style="white-space:pre-wrap;user-select:all;margin-top:10px">'+esc(t)+'</div><div class="row" style="margin-top:10px"><button class="b b-line" data-a="copyTxt" data-t="'+esc(t)+'">Copier</button><a class="b b-go" target="_blank" rel="noopener" href="'+waLink(l.tel,t)+'">💬 Envoyer sur WhatsApp</a></div>');},50);return;}
+    closeSheet();render();toast('Enregistré');return;}
+  if(f.id==='fEnt'){const t=tel9(fv('e_tel'));put('set','ent',Object.assign({nom:fv('e_nom').trim()||S.ent.nom},t.length>=9?{tel:t}:{}));render();toast('Enregistré');return;}
+  if(f.id==='fZone'){const z=fv('z_new').trim();if(!z)return;const lim=ACC&&ACC.limites?ACC.limites.zones:1;if(zones().length>=lim){toast('Votre formule permet '+lim+' zone(s)');return;}
+    if(!zones().includes(z))put('set','ent',{zones:zones().concat([z])});render();toast('Zone ajoutée');return;}
+  if(f.id==='fTarif'){const p=Math.round(num(fv('t_p'))),l=fv('t_l').trim();if(!p||!l){toast('Écrivez le trajet et le prix');return;}put('set','ent',{tarifs:(S.ent.tarifs||[]).concat([{id:rnd(8),z:fv('t_z'),lieu:l,prix:p}])});render();toast('Tarif ajouté');return;}
+  if(f.id==='fDep'){const m=Math.round(num(fv('d_m')));if(!m){toast('Écrivez le montant');return;}const lid=fv('d_lid'),l=lv(lid);
+    await doDepense({lid,zone:l?l.zone:(isZoneMgr()?MV.me.zone:(V.zf||zones()[0])),date:fv('d_date')||today(),type:fv('d_type')||'autre',montant:m,note:fv('d_note').trim()});closeSheet();V.cm=(fv('d_date')||today()).slice(0,7);render();return;}
+  if(f.id==='fCode'){const c=fv('c_code').trim().toLowerCase();try{const r=await rpc('liv_set_code',{p_code:c});ACC.code=r;lsSet(K('acc'),ACC);closeSheet();render();toast('Lien changé');}catch(err){$('c_err').textContent=errMsg(err);}return;}
+  if(f.id==='fLivre'){const c=crs(f.dataset.id);if(!c)return;const code=digits(fv('lv_code')),im=$('lv_prev'),photo=im&&im.dataset.u?im.dataset.u.split(',')[1]:'';
+    if(c.codeReq&&code.length!==4){toast('Le code a 4 chiffres');return;}if(S.ent.photoLiv&&!photo){toast('Prenez la photo du colis');return;}
+    closeSheet();await mdo('livre',c.id,{code,photo},'Course livrée ✓');return;}
+  if(f.id==='fClient'){const tel=tel9(fv('k_tel'));if(tel.length<9){toast('Écrivez votre numéro (9 chiffres)');return;}
+    const typ=fv('k_type');const tar=(PUB.tarifs||[]).find(t=>t.z===PV.city&&(typ==='personne'?/taxi/i.test(t.lieu):!/taxi/i.test(t.lieu)));
+    pubSend({zone:PV.city,type:typ,cli:{tel},de:fv('k_de').trim(),a:fv('k_a').trim(),dest:{tel:tel9(fv('k_dest'))},paie:fv('k_paie'),mode:fv('k_mode'),march:Math.round(num(fv('k_march'))),prix:tar?tar.prix:0,depos:PV.pos||undefined});return;}
+});
+// image qui ne s'ouvre pas (pas d'internet, image retirée) : on remet le logo de l'app
+document.addEventListener('error',e=>{const t=e.target;if(!t||t.tagName!=='IMG')return;
+  if(t.classList.contains('blogo'))t.outerHTML=logo(+t.getAttribute('width')||48);else t.style.visibility='hidden';},true);
+
+// ===== Démarrage : on choisit l'écran selon le lien =====
+function boot(){
+  initSB();
+  if('serviceWorker' in navigator&&location.protocol==='https:')swReady().catch(()=>{});
+  // page des clients et page de celui qui reçoit
+  if(PAGE==='commande'||Q.get('c')){
+    if(!CCODE){MODE='start';render();return;}
+    if(Q.get('d')&&Q.get('k')){MODE='dest';render();whenSB(destLoad);
+      setInterval(()=>{if(document.visibilityState==='visible'&&DST&&DST.ok&&DST.statut!=='livree'&&DST.statut!=='annulee')destLoad();},30000);return;}
+    MODE='public';render();whenSB(pubLoad);
+    setInterval(()=>{if(document.visibilityState==='visible'&&MODE==='public'&&!PV.rec&&MINE.some(m=>!m.fin))pubSuivi();},20000);return;
+  }
+  // lien d'accès d'un livreur ou d'un capo de zone
+  const lc=(Q.get('livreur')||'').toLowerCase();
+  if(lc&&!(MEM&&MEM.code===lc)){MODE='mlogin';V.mlog.code=lc;render();return;}
+  if(lc||(!lsGet('tl-auth',null)&&MEM)){
+    if(MV){startMembre();return;}
+    MODE='mlogin';render();
+    whenSB(async()=>{try{const v=await mLogin(MEM.code,MEM.tel,MEM.pin);if(v&&v.ok){setMV(v);startMembre();}else{lsDel('tl-mem');MEM=null;render();}}catch(e){if(/fermé/i.test(String(e.message||''))){MODE='locked';render();}}});
+    return;
+  }
+  // capo connecté (marche aussi sans internet avec les données gardées)
+  const st=lsGet('tl-auth',null);
+  if(st&&st.user){USER=st.user;startCapo();
+    whenSB(async()=>{try{const r=await SB.auth.getSession();if(r.data&&r.data.session){USER=r.data.session.user;return;}
+        if(!r.error&&navigator.onLine){clearInterval(PULLT);USER=null;MODE='auth';V.auth.su=false;render();toast('Entrez de nouveau avec votre mot de passe');}}catch(e){}});
+    return;}
+  if(MEM&&MV){startMembre();return;}
+  MODE='start';render();
+}
+boot();
+
+</script>
+</body>
+</html>
