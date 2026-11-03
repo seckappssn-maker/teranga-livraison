@@ -491,6 +491,8 @@ function caisse(l,date){
   const v=L('versements').find(x=>x.lid===l.id&&x.date===date);
   return {cs,total,digital,march,partL,partP,aVerser,v};
 }
+// versement du jour : déjà versé, et ce qui reste si d'autres courses sont arrivées après
+function verseInfo(k){const v=k.v;if(!v)return {v:null,paid:0,reste:k.aVerser};const paid=+v.montant||0;return {v,paid,reste:k.aVerser-paid};}
 // rapport du mois pour chaque livreur / moto
 function rapport(l,mois){
   const cs=L('courses').filter(c=>c.lid===l.id&&c.statut==='livree'&&dayOf(c.t&&c.t.livree).slice(0,7)===mois);
@@ -689,6 +691,12 @@ function lvForm(l){
 function accesText(l){return 'Bonjour '+String(l.nom||'').split(' ')[0]+', voici ton accès '+(l.role==='zone'?'capo de zone':'livreur')+' '+(S.ent.nom||'')+' (Teranga Livraison) :\n\nLien : '+SITE+'?livreur='+(ACC&&ACC.code||'')+'\nTon numéro : '+telFmt(l.tel)+'\nTon code : '+l.pin+'\n\nOuvre le lien, tape ton numéro et ton code. Puis « Partager › Sur l\'écran d\'accueil » pour l\'avoir comme une app.';}
 
 // ----- Caisse -----
+function verseHtml(l,k){const x=verseInfo(k),id=esc(l.id),at=x.v&&x.v.t?' à '+hhmm(x.v.t):'';
+  const fait=m=>(m>=0?'Versé ':'Payé au livreur ')+F(Math.abs(m))+at;
+  if(!x.v)return k.aVerser===0?'<div class="small muted" style="margin-top:8px">Rien à verser ce jour.</div>':'<button class="b b-go" style="margin-top:8px" data-a="verse" data-id="'+id+'">'+(k.aVerser>0?'Marquer « versé »':'Marquer « payé au livreur »')+'</button>';
+  if(x.reste===0)return '<div class="row" style="margin-top:8px"><span class="pill p-prise">'+fait(x.paid)+' ✓</span><button class="b b-line b-sm" data-a="unverse" data-id="'+id+'">Annuler</button></div>';
+  return '<div class="note" style="margin-top:8px">Déjà : '+fait(x.paid)+'. D\'autres courses sont arrivées après.<div class="due" style="margin-top:8px"><span>'+(x.reste>0?'Reste à verser':'Vous lui devez encore')+'</span><span class="v">'+F(Math.abs(x.reste))+'</span></div></div>'+
+    '<div class="row" style="margin-top:8px"><button class="b b-go" data-a="verse" data-id="'+id+'">'+(x.reste>0?'Il a versé le reste':'Je lui ai payé le reste')+'</button><button class="b b-line b-sm" data-a="unverse" data-id="'+id+'">Tout annuler</button></div>';}
 function capoCaisse(app){
   const d=V.cd||today();V.cd=d;
   const ls=livreurs().filter(inZone);const rows=ls.map(l=>({l,k:caisse(l,d)}));
@@ -705,7 +713,7 @@ function capoCaisse(app){
         (k.march?'<div class="ca-row"><span>Marchandise encaissée (à rendre aux vendeurs)</span><b>+ '+F(k.march)+'</b></div>':'')+
         '<div class="ca-row"><span>'+((l.paie||{}).t==='mois'?'Sa part (il a son salaire)':'Sa part')+'</span><b>'+F(k.partL)+'</b></div>'+
         '<div class="due"><span>'+(due>=0?'À verser au patron':'Le patron lui doit')+'</span><span class="v">'+F(Math.abs(due))+'</span></div></div>'+
-        (k.v?'<div class="row" style="margin-top:8px"><span class="pill p-prise">Versé '+(k.v.t?'à '+hhmm(k.v.t)+' ':'')+'✓</span><button class="b b-line b-sm" data-a="unverse" data-id="'+esc(l.id)+'">Annuler</button></div>':'<button class="b b-go" style="margin-top:8px" data-a="verse" data-id="'+esc(l.id)+'">Marquer « versé »</button>')+'</div>';}).join(''):'<div class="empty">Ajoutez vos livreurs pour voir la caisse.</div>')+'</div>'+
+        verseHtml(l,k)+'</div>';}).join(''):'<div class="empty">Ajoutez vos livreurs pour voir la caisse.</div>')+'</div>'+
     '<h3>Argent à rendre aux vendeurs</h3><div class="list">'+(ren.length?ren.map(c=>{const vt=(c.vendeur&&c.vendeur.tel)||(c.cli&&c.cli.tel);return '<div class="card stack"><div class="who"><b>N° '+(c.no||'')+' · '+F(c.march)+'</b><span class="muted">'+esc((c.vendeur&&c.vendeur.nom)||(c.cli&&c.cli.nom)||'Vendeur')+' · <span class="num" style="font-size:15px">'+telFmt(vt)+'</span></span></div><div class="row"><button class="b b-go b-sm" data-a="rendu" data-id="'+esc(c.id)+'">✓ Marquer rendu</button><a class="b b-line b-sm" target="_blank" rel="noopener" href="'+waLink(vt,'Bonjour, votre client a payé '+F(c.march)+' pour la course N° '+(c.no||'')+'. On vous envoie l\'argent. Merci !')+'">💬 Prévenir le vendeur</a></div></div>';}).join(''):'<div class="empty">Rien à rendre pour le moment.</div>')+'</div>';
 }
 
@@ -771,7 +779,9 @@ function renderLivreur(){
   app.innerHTML='<button class="dispo '+(me.dispo?'on':'off')+'" data-a="dispo" aria-pressed="'+!!me.dispo+'"><span>'+(me.dispo?'Je suis disponible':'Je suis occupé')+'<small>'+(me.dispo?'Vous recevez les nouvelles courses':'Touchez pour recevoir des courses')+'</small></span><span class="knob" aria-hidden="true"></span></button>'+
     '<h3>Mes courses · '+mine.length+'</h3><div class="list">'+(mine.length?mine.map(c=>courseCard(c,'mine')).join(''):'<div class="empty">Pas de course en cours.</div>')+'</div>'+
     (libreOk()?'<h3>Nouvelles courses à '+esc(me.zone)+' · '+libres.length+'</h3><div class="list">'+(!me.dispo?'<div class="empty">Mettez-vous « disponible » pour voir et prendre les courses.</div>':libres.length?libres.map(c=>courseCard(c,'libre')).join(''):'<div class="empty">Pas de nouvelle course. Vous recevrez un avis.</div>')+'</div>':'<div class="note blue" style="margin-top:14px">Le capo vous envoie les courses. Vous recevez un avis.</div>')+
-    '<h3>Ma journée</h3><div class="card"><div class="ca-row"><span>Courses livrées</span><b>'+k.cs.length+'</b></div><div class="ca-row"><span>Total des livraisons</span><b>'+F(k.total)+'</b></div>'+(k.march?'<div class="ca-row"><span>Marchandise encaissée</span><b>'+F(k.march)+'</b></div>':'')+'<div class="ca-row"><span>Ma part</span><b>'+(p.t==='mois'?'Salaire du mois':F(k.partL))+'</b></div><div class="due"><span>'+(k.aVerser>=0?'À verser au patron':'Le patron me doit')+'</span><span class="v">'+F(Math.abs(k.aVerser))+'</span></div>'+(k.v?'<div class="pill p-prise" style="margin-top:8px">Versé ✓</div>':'')+'</div>'+
+    '<h3>Ma journée</h3><div class="card"><div class="ca-row"><span>Courses livrées</span><b>'+k.cs.length+'</b></div><div class="ca-row"><span>Total des livraisons</span><b>'+F(k.total)+'</b></div>'+(k.march?'<div class="ca-row"><span>Marchandise encaissée</span><b>'+F(k.march)+'</b></div>':'')+'<div class="ca-row"><span>Ma part</span><b>'+(p.t==='mois'?'Salaire du mois':F(k.partL))+'</b></div><div class="due"><span>'+(k.aVerser>=0?'À verser au patron':'Le patron me doit')+'</span><span class="v">'+F(Math.abs(k.aVerser))+'</span></div>'+(()=>{const x=verseInfo(k);if(!x.v)return '';const m=x.paid>=0?'Versé au patron : '+F(x.paid):'Le patron m\'a payé : '+F(-x.paid);
+      if(x.reste===0)return '<div class="pill p-prise" style="margin-top:8px">'+m+' ✓</div>';
+      return '<div class="note" style="margin-top:8px">'+m+'. '+(x.reste>0?'Reste à verser : <b>'+F(x.reste)+'</b>':'Le patron me doit encore : <b>'+F(-x.reste)+'</b>')+'</div>';})()+'</div>'+
     pushCard()+'<div style="margin-top:16px" class="stack"><button class="b b-line" data-a="mlogout">Sortir</button></div>';
 }
 function prixBlock(c){const ts=(S.ent.tarifs||[]).filter(t=>t.z===c.zone&&+t.prix>0);const seen={};
