@@ -506,7 +506,7 @@ function rapport(l,mois){
 
 // ===== Affichage =====
 const ST={nouvelle:{t:'Nouvelle',cls:'p-nouvelle'},prise:{t:'Livreur en route',cls:'p-prise'},recuperee:{t:'Récupéré',cls:'p-recuperee'},livree:{t:'Livré',cls:'p-livree'},annulee:{t:'Annulée',cls:'p-annulee'}};
-const SRC={lien:'🌐 Lien',tel:'📞 Téléphone',boutique:'🏪 Au dépôt',shop:'🛍️ Teranga Shop'};
+const SRC={lien:'🌐 Lien',tel:'📞 Téléphone',boutique:'🏪 Au dépôt',shop:'🛍️ Teranga Shop',resto:'🍽️ Teranga Resto'};
 const MODEP={cash:'Espèces',wave:'Wave',om:'Orange Money'};
 const DEPT={carburant:'⛽ Carburant',reparation:'🔧 Réparation',vidange:'🛢️ Vidange',pneu:'🛞 Pneu',autre:'📝 Autre'};
 const paieLabel=p=>{p=p||{t:'pct',v:30};return p.t==='pct'?p.v+' % par course':p.t==='jour'?'Versement '+F(p.v)+' / jour':'Salaire '+F(p.v)+' / mois';};
