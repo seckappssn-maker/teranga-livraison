@@ -438,10 +438,12 @@ function optim(act,id,arg){const c=S.courses[id],now=Date.now(),me=MV&&MV.me;arg
   if(act==='dispo'&&me){me.dispo=!!arg.v;if(S.membres[me.id])S.membres[me.id].dispo=!!arg.v;return;}
   if(!c)return;const t=Object.assign({},c.t);
   if(act==='prendre'){c.statut='prise';c.lid=me.id;t.prise=now;}
-  if(act==='recup'&&c.statut==='prise'){c.statut='recuperee';t.recup=now;}
+  if(act==='recup'&&c.statut==='prise'){c.statut='recuperee';t.recup=now;
+    if(['cash','wave','om'].includes(arg.pay)&&c.paie!=='dest'&&+c.prix>0){c.payRec=arg.pay;c.payRecM=+c.prix;if(arg.pay!=='cash')c.payRecOk=false;}}
   if(act==='livre'){c.statut='livree';t.livree=now;if(!t.recup)t.recup=now;if(+arg.prix>0&&!(+c.prix)){c.prix=+arg.prix;c.prixLiv=true;}
     if(['cash','wave','om'].includes(arg.pay)&&doorAmt(c)>0){c.payLiv=arg.pay;c.payLivM=doorAmt(c);if(arg.pay!=='cash')c.payOk=false;}}
-  if(act==='payok'){if(arg.v)c.payOk=true;else{c.payLiv='cash';c.payNon=true;c.payOk=false;}}
+  if(act==='payok'){if(arg.w==='rec'){if(arg.v)c.payRecOk=true;else{c.payRec='cash';c.payRecNon=true;c.payRecOk=false;}}
+    else if(arg.v)c.payOk=true;else{c.payLiv='cash';c.payNon=true;c.payOk=false;}}
   if(act==='envoyer'){c.lid=arg.lid;if(c.statut==='nouvelle'){c.statut='prise';t.prise=now;}}
   if(act==='annuler')c.statut='annulee';
   if(act==='rendu')c.rendu=true;
@@ -477,9 +479,9 @@ function doAssign(id,lid){const c=crs(id),l=lv(lid);if(!c||!l)return;
   if(isZoneMgr())return mdo('envoyer',id,{lid},'Envoyée à '+l.nom);
   const p={lid,par:'capo'};if(c.statut==='nouvelle'){p.statut='prise';p.t=Object.assign({},c.t,{prise:Date.now()});}put('courses',id,p);toast('Course N° '+(c.no||'')+' envoyée à '+l.nom);}
 function doCancel(id){if(isZoneMgr())return mdo('annuler',id,{},'Course annulée');put('courses',id,{statut:'annulee',par:'capo'});toast('Course annulée');}
-function doPayOk(id,ok){const c=crs(id);if(!c)return;const m=ok?'Paiement vérifié ✓':'Compté en espèces : le livreur doit le verser';
-  if(isZoneMgr())return mdo('payok',id,{v:!!ok},m);
-  put('courses',id,ok?{payOk:true,payPar:'capo'}:{payLiv:'cash',payNon:true,payOk:false,payPar:'capo'});toast(m);}
+function doPayOk(id,ok,w){const c=crs(id);if(!c)return;const m=ok?'Paiement vérifié ✓':'Compté en espèces : le livreur doit le verser',rec=w==='rec';
+  if(isZoneMgr())return mdo('payok',id,{v:!!ok,w:rec?'rec':''},m);
+  put('courses',id,rec?(ok?{payRecOk:true,payPar:'capo'}:{payRec:'cash',payRecNon:true,payRecOk:false,payPar:'capo'}):(ok?{payOk:true,payPar:'capo'}:{payLiv:'cash',payNon:true,payOk:false,payPar:'capo'}));toast(m);}
 function doRendu(id){if(isZoneMgr())return mdo('rendu',id,{},'Argent rendu au vendeur');put('courses',id,{rendu:true});toast('Argent rendu au vendeur');}
 function doStep(id,to){const c=crs(id);if(!c)return;
   if(MODE==='membre')return mdo(to==='livree'?'livre':'recup',id,{},to==='livree'?'Course livrée ✓':'Colis récupéré');
@@ -497,13 +499,17 @@ function doDepenseDel(id){if(isZoneMgr())return mdo('depense_del',id,{});del('de
 const doorAmt=c=>(c.paie==='dest'?+c.prix||0:0)+(+c.march||0);   // ce que celui qui reçoit paie à la porte
 const payWait=c=>!!c.payLiv&&c.payLiv!=='cash'&&!c.payOk;          // Wave / OM pas encore vérifié par le patron
 const payDig=c=>!!c.payLiv&&c.payLiv!=='cash'&&!!c.payOk;          // Wave / OM vérifié : l'argent est chez le patron
+const recWait=c=>!!c.payRec&&c.payRec!=='cash'&&!c.payRecOk;       // pareil au ramassage, quand l'expéditeur paie
+const recSheetOk=c=>c.paie!=='dest'&&+c.prix>0&&payOpts().length>1;
 function payOpts(){const e=S.ent||{};return [['cash','💵 Espèces']].concat(e.wave||imgOk(e.qrWave)?[['wave','📱 Wave']]:[]).concat(e.om||imgOk(e.qrOm)?[['om','📱 Orange Money']]:[]);}
 // ===== Caisse : ce que chaque livreur doit verser =====
 function caisse(l,date){
   const cs=L('courses').filter(c=>c.lid===l.id&&c.statut==='livree'&&dayOf(c.t&&c.t.livree)===date);
   // prix déjà chez le patron : payé par Wave / OM au départ (ancienne façon), ou à la porte et vérifié
-  const dP=sum(cs,c=>(c.payLiv?((c.paie!=='dest'&&c.mode!=='cash')||(c.paie==='dest'&&payDig(c))):c.mode!=='cash')?+c.prix||0:0),dM=sum(cs.filter(payDig),c=>+c.march);
-  const total=sum(cs,c=>+c.prix),digital=dP+dM,march=sum(cs,c=>+c.march),wl=cs.filter(payWait),wait=sum(wl,c=>+c.payLivM||doorAmt(c));
+  const dPx=c=>c.paie==='dest'?(c.payLiv?payDig(c):c.mode!=='cash'):(c.payRec?c.payRec!=='cash'&&!!c.payRecOk:c.mode!=='cash');
+  const dP=sum(cs,c=>dPx(c)?+c.prix||0:0),dM=sum(cs.filter(payDig),c=>+c.march);
+  const wl=cs.filter(recWait).map(c=>({c,w:'rec',m:+c.payRecM||+c.prix||0})).concat(cs.filter(payWait).map(c=>({c,w:'liv',m:+c.payLivM||doorAmt(c)})));
+  const total=sum(cs,c=>+c.prix),digital=dP+dM,march=sum(cs,c=>+c.march),wait=sum(wl,x=>x.m);
   const p=l.paie||{t:'pct',v:30};let partL,partP;
   if(p.t==='pct'){partL=Math.round(total*(+p.v||0)/100);partP=total-partL;}
   else if(p.t==='jour'){partP=cs.length?(+p.v||0):0;partL=total-partP;}
@@ -607,14 +613,24 @@ function payBox(m,amt){if(m!=='wave'&&m!=='om')return '';const e=S.ent||{},w=m==
 function payBlock(c){const o=payOpts();if(o.length<2||!(doorAmt(c)>0||(c.paie==='dest'&&!(+c.prix))))return '';
   const def=c.paie==='dest'&&(c.mode==='wave'||c.mode==='om')&&o.some(x=>x[0]===c.mode)?c.mode:'cash';
   return grp('Le client paie comment ?',chips('lv_pay',o,def))+'<div id="lv_paybox">'+payBox(def,payNow(c))+'</div>';}
-function updPay(){const f=$('fLivre')||$('fSoloLivre'),b=$('lv_paybox');if(!f||!b)return;const c=crs(f.dataset.id);if(c)b.innerHTML=payBox(fv('lv_pay')||'cash',payNow(c));}
-function payLine(c,admin){if(!c.payLiv||c.statut!=='livree')return '';const m=F(+c.payLivM||doorAmt(c));
+function updPay(){const f=$('fLivre')||$('fSoloLivre')||$('fRecup'),b=$('lv_paybox');if(!f||!b)return;const c=crs(f.dataset.id);if(c)b.innerHTML=payBox(fv('lv_pay')||'cash',f.id==='fRecup'?+c.prix||0:payNow(c));}
+function payRecLine(c,admin){if(!c.payRec)return '';const m=F(+c.payRecM||+c.prix||0);
+  if(c.payRec==='cash')return c.payRecNon?'<div class="small" style="color:var(--bad)">✕ Wave / OM du ramassage pas reçu : compté en espèces chez le livreur ('+m+')</div>':'';
+  const nm=MODEP[c.payRec]||'Wave';if(c.payRecOk)return '<div class="small">📱 Ramassage : payé '+m+' par '+nm+' · <b style="color:var(--go)">vérifié ✓</b></div>';
+  return '<div class="note"><b>📱 L\'expéditeur a payé '+m+' par '+nm+'</b> · ⏳ à vérifier sur votre téléphone'+(admin?'<div class="row" style="margin-top:6px"><button class="b b-go b-sm" data-a="payOk" data-w="rec" data-id="'+esc(c.id)+'">✓ Reçu sur mon '+nm+'</button><button class="b b-bad b-sm" data-a="payNon" data-w="rec" data-id="'+esc(c.id)+'">Pas reçu</button></div>':'')+'</div>';}
+function payRecBlock(c){const o=payOpts();if(!recSheetOk(c))return '';const def=(c.mode==='wave'||c.mode==='om')&&o.some(x=>x[0]===c.mode)?c.mode:'cash';
+  return grp('L\'expéditeur paie comment ?',chips('lv_pay',o,def))+'<div id="lv_paybox">'+payBox(def,+c.prix||0)+'</div>';}
+function recSheet(c,seul){
+  openSheet('Ramassage N° '+(c.no||''),'<form id="fRecup" class="stack" data-id="'+esc(c.id)+'"'+(seul?' data-solo="1"':'')+'><div class="cod">💰 À encaisser : '+F(c.prix)+' (la livraison, payée par l\'expéditeur)</div>'+
+    payRecBlock(c)+'<button class="b b-pick b-big" type="submit">📦 Confirmer le ramassage</button></form>');}
+function payLine(c,admin){return payRecLine(c,admin)+payLiveLine(c,admin);}
+function payLiveLine(c,admin){if(!c.payLiv||c.statut!=='livree')return '';const m=F(+c.payLivM||doorAmt(c));
   if(c.payLiv==='cash')return c.payNon?'<div class="small" style="color:var(--bad)">✕ Wave / OM pas reçu : compté en espèces chez le livreur ('+m+')</div>':'<div class="small muted">💵 Payé '+m+' en espèces au livreur</div>';
   const nm=MODEP[c.payLiv]||'Wave';if(c.payOk)return '<div class="small">📱 Payé '+m+' par '+nm+' · <b style="color:var(--go)">vérifié ✓</b></div>';
   return '<div class="note"><b>📱 Le client a payé '+m+' par '+nm+'</b> · ⏳ à vérifier sur votre téléphone'+(admin?'<div class="row" style="margin-top:6px"><button class="b b-go b-sm" data-a="payOk" data-id="'+esc(c.id)+'">✓ Reçu sur mon '+nm+'</button><button class="b b-bad b-sm" data-a="payNon" data-id="'+esc(c.id)+'">Pas reçu</button></div>':'')+'</div>';}
 function payWaitHtml(wl){if(!wl.length)return '';
   return '<div class="note" style="margin-top:8px"><b>⏳ Wave / Orange Money à vérifier</b><div class="hint">Regardez sur votre téléphone si l\'argent est arrivé, avant de prendre son versement. Tant que ce n\'est pas vérifié, c\'est compté dans ce qu\'il doit.</div>'+
-    wl.map(c=>'<div class="who" style="margin-top:6px"><span>N° '+(c.no||'')+' · <b>'+F(+c.payLivM||doorAmt(c))+'</b> · '+(MODEP[c.payLiv]||'')+'</span><span class="row"><button class="b b-go b-sm" data-a="payOk" data-id="'+esc(c.id)+'">✓ Reçu</button><button class="b b-bad b-sm" data-a="payNon" data-id="'+esc(c.id)+'">Pas reçu</button></span></div>').join('')+'</div>';}
+    wl.map(({c,w,m})=>'<div class="who" style="margin-top:6px"><span>N° '+(c.no||'')+' · <b>'+F(m)+'</b> · '+(MODEP[w==='rec'?c.payRec:c.payLiv]||'')+(w==='rec'?' · ramassage':'')+'</span><span class="row"><button class="b b-go b-sm" data-a="payOk" data-w="'+w+'" data-id="'+esc(c.id)+'">✓ Reçu</button><button class="b b-bad b-sm" data-a="payNon" data-w="'+w+'" data-id="'+esc(c.id)+'">Pas reçu</button></span></div>').join('')+'</div>';}
 function qrPick(k,inp,lab){const u=S.ent[k];return '<div class="f"><span>'+lab+'</span><label class="qrpick" for="'+inp+'">'+(imgOk(u)?'<img src="'+esc(u)+'" alt="'+lab+'">':'<span>+ Ajouter</span>')+'</label>'+(u?'<button type="button" class="b b-bad b-sm" data-a="imgDel" data-v="'+k+'">Retirer</button>':'')+'</div>';}
 function contactHtml(c,full){
   const p=c.cli&&c.cli.tel;let h='';
@@ -627,7 +643,7 @@ function prixLivHtml(c){const ts=(S.ent.tarifs||[]).filter(t=>t.z===c.zone&&+t.p
   const l=lv(c.lid),p=c.cli&&c.cli.tel,msg='Bonjour, c\'est '+(S.ent.nom||'Teranga Livraison')+'. Pour votre course N° '+(c.no||'')+(l?' avec '+l.nom:'')+', le livreur a noté '+F(c.prix)+'. C\'est bien ce que vous avez payé ? Merci !';
   return '<div class="note"'+(bas?' style="border-color:var(--bad)"':'')+'>✍️ Prix noté par le livreur : <b>'+F(c.prix)+'</b>'+(bas?' · <b style="color:var(--bad)">⚠️ moins que vos tarifs ('+F(mn)+')</b>':'')+
     (p?'<div style="margin-top:6px"><a class="b b-line b-sm" target="_blank" rel="noopener" href="'+waLink(p,msg)+'">💬 Vérifier avec le client</a></div>':'')+'</div>';}
-function soloActions(c,open){let h='';const aRec=c.mode==='cash'&&c.paie!=='dest'?+c.prix||0:0,aLiv=(c.mode==='cash'&&c.paie==='dest'?+c.prix||0:0)+(+c.march||0);
+function soloActions(c,open){let h='';const aRec=c.paie!=='dest'&&(c.mode==='cash'||recSheetOk(c))?+c.prix||0:0,aLiv=(c.mode==='cash'&&c.paie==='dest'?+c.prix||0:0)+(+c.march||0);
   if(c.cl&&open)h+='<div class="small">🔐 Code de livraison : <b class="code">'+esc(c.cl)+'</b> <span class="muted">(celui qui reçoit le connaît)</span></div>';
   if(actif(c)){const q=c.statut==='prise'?c.de:c.a,pos=c.statut==='prise'?c.depos:c.apos;
     if(q||posOk(pos))h+='<a class="b b-line" href="'+mapLink(q,c.zone,pos)+'" target="_blank" rel="noopener">🗺️ Itinéraire'+(posOk(pos)?' (position exacte)':' vers « '+esc(q)+' »')+'</a>';}
@@ -671,7 +687,7 @@ function courseCard(c,ctx){
   }else if(ctx==='mine'){
     const q=c.statut==='prise'?c.de:c.a,pos=c.statut==='prise'?c.depos:c.apos;
     if(q||posOk(pos))h+='<a class="b b-line" href="'+mapLink(q,c.zone,pos)+'" target="_blank" rel="noopener">🗺️ Itinéraire'+(posOk(pos)?' (position exacte)':' vers « '+esc(q)+' »')+'</a>';
-    const aRec=c.mode==='cash'&&c.paie!=='dest'?+c.prix||0:0,aLiv=(c.mode==='cash'&&c.paie==='dest'?+c.prix||0:0)+(+c.march||0);
+    const aRec=c.paie!=='dest'&&(c.mode==='cash'||recSheetOk(c))?+c.prix||0:0,aLiv=(c.mode==='cash'&&c.paie==='dest'?+c.prix||0:0)+(+c.march||0);
     if(c.statut==='prise')h+='<button class="b b-pick b-big" data-a="mstep" data-v="recup" data-id="'+c.id+'">📦 RÉCUPÉRÉ'+(aRec>0?' · j\'encaisse '+F(aRec):'')+'</button>';
     if(c.statut==='recuperee')h+='<button class="b b-done b-big" data-a="mlivre" data-id="'+c.id+'">✅ LIVRÉ'+(aLiv>0?' · j\'encaisse '+F(aLiv):'')+'</button>';
   }
@@ -1126,8 +1142,8 @@ document.addEventListener('click',async e=>{
   if(a==='doAssign'){closeSheet();await doAssign(id,el.dataset.l);render();return;}
   if(a==='cancel'){if(el.dataset.arm!=='1'){el.dataset.arm='1';el.textContent='Sûr ? Touchez encore';return;}await doCancel(id);render();return;}
   if(a==='rendu'){await doRendu(id);render();return;}
-  if(a==='payOk'){await doPayOk(id,true);render();return;}
-  if(a==='payNon'){if(el.dataset.arm!=='1'){el.dataset.arm='1';el.textContent='Sûr ? Pas reçu';return;}await doPayOk(id,false);render();return;}
+  if(a==='payOk'){await doPayOk(id,true,el.dataset.w);render();return;}
+  if(a==='payNon'){if(el.dataset.arm!=='1'){el.dataset.arm='1';el.textContent='Sûr ? Pas reçu';return;}await doPayOk(id,false,el.dataset.w);render();return;}
   if(a==='copyNum'){copy(el.dataset.v||'','Numéro copié');return;}
   if(a==='stepCapo'){const c=crs(id);if(!c)return;if(el.dataset.arm!=='1'){el.dataset.arm='1';el.textContent='Sûr ? Touchez encore';return;}
     if(isZoneMgr())await mdo(c.statut==='prise'?'recup':'livre',id,{},'Fait');else doStep(id,c.statut==='prise'?'recuperee':'livree');render();return;}
@@ -1137,7 +1153,7 @@ document.addEventListener('click',async e=>{
   if(a==='voc'){playVocal(id);return;}
   if(a==='photo'){try{const u=await getMedia(id,'photo');openSheet('Photo de livraison',u?'<img class="photo-prev" src="'+u+'" alt="Colis livré" style="max-height:none">':'<div class="empty">Photo supprimée ou pas encore arrivée.</div>');}catch(err){toast(errMsg(err));}return;}
   if(a==='soloTake'){const c=crs(id);if(!c)return;put('courses',id,{lid:SOLO_ID,statut:'prise',par:'capo',t:Object.assign({},c.t,{prise:Date.now()})});render();toast('Course pour vous ✓');buzz();return;}
-  if(a==='soloRecup'){doStep(id,'recuperee');render();return;}
+  if(a==='soloRecup'){const c=crs(id);if(c&&recSheetOk(c))return recSheet(c,true);doStep(id,'recuperee');render();return;}
   if(a==='soloLivre'){const c=crs(id);if(c)soloLivreSheet(c);return;}
   if(a==='lvNew'){const lim=ACC&&ACC.limites?ACC.limites.livreurs:3;openSheet('Ajouter',lvForm(null)+(livreurs().length>=lim?'<div class="note" style="margin-top:10px">Votre formule permet '+lim+' livreurs. Vous pouvez ajouter un capo de zone, ou passer à une formule plus grande pour plus de livreurs.</div>':''));return;}
   if(a==='lvEdit'){const l=lv(id);if(l)openSheet('Modifier '+l.nom,lvForm(l));return;}
@@ -1162,7 +1178,7 @@ document.addEventListener('click',async e=>{
   // livreur
   if(a==='dispo'){const me=lv(MV.me.id)||MV.me;await mdo('dispo','',{v:!me.dispo});return;}
   if(a==='take'){await mdo('prendre',id,{},'Course pour vous ✓');buzz();return;}
-  if(a==='mstep'){await mdo('recup',id,{},'Colis récupéré');return;}
+  if(a==='mstep'){const c=crs(id);if(c&&recSheetOk(c))return recSheet(c);await mdo('recup',id,{},'Colis récupéré');return;}
   if(a==='mlivre'){const c=crs(id);if(!c)return;if(c.codeReq||S.ent.photoLiv||!(+c.prix)||(doorAmt(c)>0&&payOpts().length>1))return livreSheet(c);
     if(el.dataset.arm!=='1'){el.dataset.arm='1';el.textContent='Sûr ? Touchez encore pour confirmer';return;}await mdo('livre',id,{},'Course livrée ✓');return;}
   // page clients
@@ -1243,6 +1259,9 @@ document.addEventListener('submit',async e=>{
   if(f.id==='fCode'){const c=fv('c_code').trim().toLowerCase();try{const r=await rpc('liv_set_code',{p_code:c});ACC.code=r;lsSet(K('acc'),ACC);closeSheet();render();toast('Lien changé');}catch(err){$('c_err').textContent=errMsg(err);}return;}
   if(f.id==='fPay'){const w=tel9(fv('e_wave')),o=tel9(fv('e_om'));if((w&&w.length!==9)||(o&&o.length!==9)){toast('Numéro Wave / Orange Money : 9 chiffres');return;}
     put('set','ent',{wave:w,om:o});render();toast('Enregistré');return;}
+  if(f.id==='fRecup'){const c=crs(f.dataset.id);if(!c)return;const pay=fv('lv_pay'),ok=['cash','wave','om'].includes(pay)&&+c.prix>0;closeSheet();
+    if(f.dataset.solo==='1'){if(ok)put('courses',c.id,Object.assign({payRec:pay,payRecM:+c.prix},pay!=='cash'?{payRecOk:true}:{}));doStep(c.id,'recuperee');render();return;}
+    await mdo('recup',c.id,ok?{pay}:{},'Colis récupéré');return;}
   if(f.id==='fSoloLivre'){const c=crs(f.dataset.id);if(!c)return;let prix=0;
     if(!(+c.prix)){const px=fv('lv_px');if(!px){toast('Choisissez le prix de la course');return;}
       if(px==='autre'){prix=Math.round(num(fv('lv_prix')));if(prix<=0){toast('Écrivez le prix');return;}}else if(px!=='patron')prix=+px;}
