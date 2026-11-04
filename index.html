@@ -248,6 +248,13 @@ html,body{min-height:100%}
 .wolof{font-size:12.5px;font-weight:600;opacity:.85}
 .big4 .b[aria-pressed="true"]{outline:3px solid var(--brand);outline-offset:2px;box-shadow:0 6px 18px rgba(14,42,87,.18)}
 .big4 .b[aria-pressed="true"].b-line{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+/* Wave / Orange Money : code QR du patron */
+.qrpick{display:flex;align-items:center;justify-content:center;aspect-ratio:1/1;width:100%;max-width:100%;border:2px dashed var(--line);border-radius:14px;cursor:pointer;overflow:hidden;font-weight:700;color:var(--muted);background:var(--surface)}
+.qrpick img{width:100%;height:100%;object-fit:contain;background:#fff}
+.paybox{border:2px solid var(--go);background:var(--go-soft);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center}
+.paybox .pb-t{font-size:18px;font-weight:700;color:var(--ink)}
+.paybox img.qr{width:min(78vw,300px);height:auto;max-width:100%;background:#fff;border-radius:12px;padding:8px}
+.paybox .pb-n{font-size:17px;color:var(--ink)}.paybox .pb-n .num{font-size:22px}
 
 </style>
 </head>
@@ -432,7 +439,9 @@ function optim(act,id,arg){const c=S.courses[id],now=Date.now(),me=MV&&MV.me;arg
   if(!c)return;const t=Object.assign({},c.t);
   if(act==='prendre'){c.statut='prise';c.lid=me.id;t.prise=now;}
   if(act==='recup'&&c.statut==='prise'){c.statut='recuperee';t.recup=now;}
-  if(act==='livre'){c.statut='livree';t.livree=now;if(!t.recup)t.recup=now;if(+arg.prix>0&&!(+c.prix)){c.prix=+arg.prix;c.prixLiv=true;}}
+  if(act==='livre'){c.statut='livree';t.livree=now;if(!t.recup)t.recup=now;if(+arg.prix>0&&!(+c.prix)){c.prix=+arg.prix;c.prixLiv=true;}
+    if(['cash','wave','om'].includes(arg.pay)&&doorAmt(c)>0){c.payLiv=arg.pay;c.payLivM=doorAmt(c);if(arg.pay!=='cash')c.payOk=false;}}
+  if(act==='payok'){if(arg.v)c.payOk=true;else{c.payLiv='cash';c.payNon=true;c.payOk=false;}}
   if(act==='envoyer'){c.lid=arg.lid;if(c.statut==='nouvelle'){c.statut='prise';t.prise=now;}}
   if(act==='annuler')c.statut='annulee';
   if(act==='rendu')c.rendu=true;
@@ -468,6 +477,9 @@ function doAssign(id,lid){const c=crs(id),l=lv(lid);if(!c||!l)return;
   if(isZoneMgr())return mdo('envoyer',id,{lid},'Envoyée à '+l.nom);
   const p={lid,par:'capo'};if(c.statut==='nouvelle'){p.statut='prise';p.t=Object.assign({},c.t,{prise:Date.now()});}put('courses',id,p);toast('Course N° '+(c.no||'')+' envoyée à '+l.nom);}
 function doCancel(id){if(isZoneMgr())return mdo('annuler',id,{},'Course annulée');put('courses',id,{statut:'annulee',par:'capo'});toast('Course annulée');}
+function doPayOk(id,ok){const c=crs(id);if(!c)return;const m=ok?'Paiement vérifié ✓':'Compté en espèces : le livreur doit le verser';
+  if(isZoneMgr())return mdo('payok',id,{v:!!ok},m);
+  put('courses',id,ok?{payOk:true,payPar:'capo'}:{payLiv:'cash',payNon:true,payOk:false,payPar:'capo'});toast(m);}
 function doRendu(id){if(isZoneMgr())return mdo('rendu',id,{},'Argent rendu au vendeur');put('courses',id,{rendu:true});toast('Argent rendu au vendeur');}
 function doStep(id,to){const c=crs(id);if(!c)return;
   if(MODE==='membre')return mdo(to==='livree'?'livre':'recup',id,{},to==='livree'?'Course livrée ✓':'Colis récupéré');
@@ -481,17 +493,24 @@ function doDepense(o){const id=o.id||rnd(12);
   put('depenses',id,Object.assign({id,t:Date.now()},o));toast('Dépense notée');}
 function doDepenseDel(id){if(isZoneMgr())return mdo('depense_del',id,{});del('depenses',id);}
 
+// ===== Paiement à la livraison : espèces, ou Wave / Orange Money sur le numéro du patron =====
+const doorAmt=c=>(c.paie==='dest'?+c.prix||0:0)+(+c.march||0);   // ce que celui qui reçoit paie à la porte
+const payWait=c=>!!c.payLiv&&c.payLiv!=='cash'&&!c.payOk;          // Wave / OM pas encore vérifié par le patron
+const payDig=c=>!!c.payLiv&&c.payLiv!=='cash'&&!!c.payOk;          // Wave / OM vérifié : l'argent est chez le patron
+function payOpts(){const e=S.ent||{};return [['cash','💵 Espèces']].concat(e.wave||imgOk(e.qrWave)?[['wave','📱 Wave']]:[]).concat(e.om||imgOk(e.qrOm)?[['om','📱 Orange Money']]:[]);}
 // ===== Caisse : ce que chaque livreur doit verser =====
 function caisse(l,date){
   const cs=L('courses').filter(c=>c.lid===l.id&&c.statut==='livree'&&dayOf(c.t&&c.t.livree)===date);
-  const total=sum(cs,c=>+c.prix),digital=sum(cs.filter(c=>c.mode!=='cash'),c=>+c.prix),march=sum(cs,c=>+c.march);
+  // prix déjà chez le patron : payé par Wave / OM au départ (ancienne façon), ou à la porte et vérifié
+  const dP=sum(cs,c=>(c.payLiv?((c.paie!=='dest'&&c.mode!=='cash')||(c.paie==='dest'&&payDig(c))):c.mode!=='cash')?+c.prix||0:0),dM=sum(cs.filter(payDig),c=>+c.march);
+  const total=sum(cs,c=>+c.prix),digital=dP+dM,march=sum(cs,c=>+c.march),wl=cs.filter(payWait),wait=sum(wl,c=>+c.payLivM||doorAmt(c));
   const p=l.paie||{t:'pct',v:30};let partL,partP;
   if(p.t==='pct'){partL=Math.round(total*(+p.v||0)/100);partP=total-partL;}
   else if(p.t==='jour'){partP=cs.length?(+p.v||0):0;partL=total-partP;}
   else{partL=0;partP=total;}
   const aVerser=partP-digital+march;
   const v=L('versements').find(x=>x.lid===l.id&&x.date===date);
-  return {cs,total,digital,march,partL,partP,aVerser,v};
+  return {cs,total,digital,dP,dM,march,partL,partP,aVerser,v,wl,wait};
 }
 // versement du jour : déjà versé, et ce qui reste si d'autres courses sont arrivées après
 function verseInfo(k){const v=k.v;if(!v)return {v:null,paid:0,reste:k.aVerser};const paid=+v.montant||0;return {v,paid,reste:k.aVerser-paid};}
@@ -578,6 +597,25 @@ function moneyHtml(c,forLiv){
     (+c.march?'<div class="cod">💰 Encaisser pour le vendeur : '+F(c.march)+(c.statut==='livree'&&!forLiv?(c.rendu?' · rendu ✓':' · à rendre'):'')+'</div>':'')+
     (c.vendeur&&c.vendeur.nom?'<div class="small muted">🛍️ Vendeur : '+esc(c.vendeur.nom)+(c.vendeur.tel?' · '+telFmt(c.vendeur.tel):'')+'</div>':'');
 }
+// ----- paiement à la porte : Wave / Orange Money sur le numéro du patron -----
+function payNow(c){let px=+c.prix||0;if(!px){const v=fv('lv_px');px=v==='autre'?Math.round(num(fv('lv_prix'))):(+v||0);}return (c.paie==='dest'?px:0)+(+c.march||0);}
+function payBox(m,amt){if(m!=='wave'&&m!=='om')return '';const e=S.ent||{},w=m==='wave',qr=w?e.qrWave:e.qrOm,n=w?e.wave:e.om,nm=w?'Wave':'Orange Money';
+  return '<div class="paybox"><div class="pb-t">'+(amt>0?'Le client envoie <b>'+F(amt)+'</b> par '+nm:'Le client paie par '+nm)+'</div>'+
+    (imgOk(qr)?'<img class="qr" src="'+esc(qr)+'" alt="Code QR '+nm+'"><div class="hint">Il scanne ce code avec son app '+nm+'.</div>':'')+
+    (n?'<div class="pb-n">'+(imgOk(qr)?'Ou il envoie au':'Il envoie au')+' <b class="num">'+telFmt(n)+'</b>'+(e.nom?'<br><span class="muted">'+esc(e.nom)+'</span>':'')+'</div><button type="button" class="b b-line b-sm" data-a="copyNum" data-v="'+esc(tel9(n))+'">Copier le numéro</button>':'')+
+    '<div class="hint">Touchez « Confirmer » seulement quand le client vous montre que l\'argent est parti. Le patron vérifie sur son '+nm+'.</div></div>';}
+function payBlock(c){const o=payOpts();if(o.length<2||!(doorAmt(c)>0||(c.paie==='dest'&&!(+c.prix))))return '';
+  const def=c.paie==='dest'&&(c.mode==='wave'||c.mode==='om')&&o.some(x=>x[0]===c.mode)?c.mode:'cash';
+  return grp('Le client paie comment ?',chips('lv_pay',o,def))+'<div id="lv_paybox">'+payBox(def,payNow(c))+'</div>';}
+function updPay(){const f=$('fLivre')||$('fSoloLivre'),b=$('lv_paybox');if(!f||!b)return;const c=crs(f.dataset.id);if(c)b.innerHTML=payBox(fv('lv_pay')||'cash',payNow(c));}
+function payLine(c,admin){if(!c.payLiv||c.statut!=='livree')return '';const m=F(+c.payLivM||doorAmt(c));
+  if(c.payLiv==='cash')return c.payNon?'<div class="small" style="color:var(--bad)">✕ Wave / OM pas reçu : compté en espèces chez le livreur ('+m+')</div>':'<div class="small muted">💵 Payé '+m+' en espèces au livreur</div>';
+  const nm=MODEP[c.payLiv]||'Wave';if(c.payOk)return '<div class="small">📱 Payé '+m+' par '+nm+' · <b style="color:var(--go)">vérifié ✓</b></div>';
+  return '<div class="note"><b>📱 Le client a payé '+m+' par '+nm+'</b> · ⏳ à vérifier sur votre téléphone'+(admin?'<div class="row" style="margin-top:6px"><button class="b b-go b-sm" data-a="payOk" data-id="'+esc(c.id)+'">✓ Reçu sur mon '+nm+'</button><button class="b b-bad b-sm" data-a="payNon" data-id="'+esc(c.id)+'">Pas reçu</button></div>':'')+'</div>';}
+function payWaitHtml(wl){if(!wl.length)return '';
+  return '<div class="note" style="margin-top:8px"><b>⏳ Wave / Orange Money à vérifier</b><div class="hint">Regardez sur votre téléphone si l\'argent est arrivé, avant de prendre son versement. Tant que ce n\'est pas vérifié, c\'est compté dans ce qu\'il doit.</div>'+
+    wl.map(c=>'<div class="who" style="margin-top:6px"><span>N° '+(c.no||'')+' · <b>'+F(+c.payLivM||doorAmt(c))+'</b> · '+(MODEP[c.payLiv]||'')+'</span><span class="row"><button class="b b-go b-sm" data-a="payOk" data-id="'+esc(c.id)+'">✓ Reçu</button><button class="b b-bad b-sm" data-a="payNon" data-id="'+esc(c.id)+'">Pas reçu</button></span></div>').join('')+'</div>';}
+function qrPick(k,inp,lab){const u=S.ent[k];return '<div class="f"><span>'+lab+'</span><label class="qrpick" for="'+inp+'">'+(imgOk(u)?'<img src="'+esc(u)+'" alt="'+lab+'">':'<span>+ Ajouter</span>')+'</label>'+(u?'<button type="button" class="b b-bad b-sm" data-a="imgDel" data-v="'+k+'">Retirer</button>':'')+'</div>';}
 function contactHtml(c,full){
   const p=c.cli&&c.cli.tel;let h='';
   if(p)h+='<div class="who"><span>👤 '+esc(c.cli.nom||'Client')+' · <span class="num" style="font-size:15px">'+telFmt(p)+'</span></span>'+(full?'<a class="b b-line b-sm" href="'+telLink(p)+'">📞 Appeler</a><a class="b b-line b-sm" href="'+waLink(p)+'" target="_blank" rel="noopener">💬</a>':'')+'</div>';
@@ -606,7 +644,7 @@ function soloActions(c,open){let h='';const aRec=c.mode==='cash'&&c.paie!=='dest
 function soloLivreSheet(c){
   openSheet('Livrer N° '+(c.no||''),'<form id="fSoloLivre" class="stack" data-id="'+esc(c.id)+'">'+
     (+c.march||(c.paie==='dest'&&+c.prix)?'<div class="cod">💰 À encaisser : '+F((c.paie==='dest'?+c.prix:0)+(+c.march||0))+(+c.march?' (dont '+F(c.march)+' pour le vendeur)':'')+'</div>':'')+
-    (+c.prix?'':prixBlock(c,true))+'<button class="b b-done b-big" type="submit">✅ Confirmer la livraison</button></form>');}
+    (+c.prix?'':prixBlock(c,true))+payBlock(c)+'<button class="b b-done b-big" type="submit">✅ Confirmer la livraison</button></form>');}
 function courseCard(c,ctx){
   const l=lv(c.lid);const st=ST[c.statut]||ST.nouvelle;const open=c.statut!=='annulee'&&c.statut!=='livree';
   let h='<article class="course s-'+c.statut+'"><div class="c-head"><span class="c-no">N° '+(c.no||'…')+'</span><span class="c-meta">'+(c.vocal?'🎤 Vocal':SRC[c.src]||'')+' · '+hhmm(c.t&&c.t.cree)+(zones().length>1&&!V.zf?' · '+esc(c.zone):'')+'</span><span class="pill '+st.cls+'">'+st.t+'</span></div>';
@@ -614,6 +652,7 @@ function courseCard(c,ctx){
   if(ctx==='capo'&&solo())return h+soloActions(c,open)+'</article>';
   if(ctx==='capo'){
     if(c.prixLiv)h+=prixLivHtml(c);
+    h+=payLine(c,true);
     if(c.cl&&open)h+='<div class="small">🔐 Code de livraison : <b class="code">'+esc(c.cl)+'</b> <span class="muted">(celui qui reçoit le donne au livreur)</span></div>';
     if(l)h+='<div class="who"><span>🛵 <b>'+esc(l.nom)+'</b>'+(c.statut==='livree'?' · livré à '+hhmm(c.t.livree):c.statut==='recuperee'?' · récupéré à '+hhmm(c.t.recup):c.statut==='prise'?' · parti à '+hhmm(c.t.prise):'')+'</span>'+(c.photo?'<button class="b b-line b-sm" data-a="photo" data-id="'+c.id+'">📷 Photo</button>':'')+'</div>';
     h+='<div class="row">';
@@ -719,12 +758,12 @@ function verseHtml(l,k){const x=verseInfo(k),id=esc(l.id),at=x.v&&x.v.t?' à '+h
   return '<div class="note" style="margin-top:8px">Déjà : '+fait(x.paid)+'. D\'autres courses sont arrivées après.<div class="due" style="margin-top:8px"><span>'+(x.reste>0?'Reste à verser':'Vous lui devez encore')+'</span><span class="v">'+F(Math.abs(x.reste))+'</span></div></div>'+
     '<div class="row" style="margin-top:8px"><button class="b b-go" data-a="verse" data-id="'+id+'">'+(x.reste>0?'Il a versé le reste':'Je lui ai payé le reste')+'</button><button class="b b-line b-sm" data-a="unverse" data-id="'+id+'">Tout annuler</button></div>';}
 function renduList(ren){return '<h3>Argent à rendre aux vendeurs</h3><div class="list">'+(ren.length?ren.map(c=>'<div class="card who"><span><b>N° '+(c.no||'')+' · '+F(c.march)+'</b> · '+esc((c.vendeur&&c.vendeur.nom)||(c.cli&&c.cli.nom)||'Vendeur')+'</span><button class="b b-go b-sm" data-a="rendu" data-id="'+c.id+'">Rendu ✓</button></div>').join(''):'<div class="empty">Rien à rendre pour le moment.</div>')+'</div>';}
-function capoCaisseSolo(app,d,k,ren){const cash=k.total-k.digital;
+function capoCaisseSolo(app,d,k,ren){const cash=k.total-k.dP;
   app.innerHTML='<div class="card daynav"><button class="b b-line b-sm" data-a="day" data-v="-1" aria-label="Jour précédent">‹</button><b>'+fdate(d)+'</b><button class="b b-line b-sm" data-a="day" data-v="1" aria-label="Jour suivant"'+(d>=today()?' disabled':'')+'>›</button></div>'+
     '<h3>Ma journée</h3><div class="card"><div class="ca-row"><span>Courses livrées</span><b>'+k.cs.length+'</b></div><div class="ca-row"><span>Total des livraisons</span><b>'+F(k.total)+'</b></div>'+
     (k.digital?'<div class="ca-row"><span>Reçu par Wave / Orange Money</span><b>'+F(k.digital)+'</b></div>':'')+'<div class="ca-row"><span>Reçu en espèces</span><b>'+F(cash)+'</b></div>'+
     (k.march?'<div class="ca-row"><span>Marchandise encaissée (à rendre aux vendeurs)</span><b>'+F(k.march)+'</b></div>':'')+
-    '<div class="due"><span>Argent en espèces sur moi</span><span class="v">'+F(cash+k.march)+'</span></div></div>'+renduList(ren);}
+    '<div class="due"><span>Argent en espèces sur moi</span><span class="v">'+F(cash+k.march-k.dM)+'</span></div></div>'+renduList(ren);}
 function capoCaisse(app){
   const d=V.cd||today();V.cd=d;
   const ls=livreurs().filter(inZone);const rows=ls.map(l=>({l,k:caisse(l,d)}));
@@ -739,10 +778,11 @@ function capoCaisse(app){
       return '<div class="card"><div class="lv"><div class="av">'+initials(l.nom)+'</div><div class="main"><div class="t">'+esc(l.nom)+'</div><div class="s">'+paieLabel(l.paie)+'</div></div></div><div style="margin-top:8px">'+
         '<div class="ca-row"><span>Courses livrées</span><b>'+k.cs.length+'</b></div><div class="ca-row"><span>Total des livraisons</span><b>'+F(k.total)+'</b></div>'+
         (k.digital?'<div class="ca-row"><span>Payé par Wave / OM (déjà chez vous)</span><b>− '+F(k.digital)+'</b></div>':'')+
+        (k.wait?'<div class="ca-row"><span>⏳ Wave / OM pas encore vérifié</span><b>'+F(k.wait)+'</b></div>':'')+
         (k.march?'<div class="ca-row"><span>Marchandise encaissée (à rendre aux vendeurs)</span><b>+ '+F(k.march)+'</b></div>':'')+
         '<div class="ca-row"><span>'+((l.paie||{}).t==='mois'?'Sa part (il a son salaire)':'Sa part')+'</span><b>'+F(k.partL)+'</b></div>'+
         '<div class="due"><span>'+(due>=0?'À verser au patron':'Le patron lui doit')+'</span><span class="v">'+F(Math.abs(due))+'</span></div></div>'+
-        verseHtml(l,k)+'</div>';}).join(''):'<div class="empty">Ajoutez vos livreurs pour voir la caisse.</div>')+'</div>'+
+        payWaitHtml(k.wl)+verseHtml(l,k)+'</div>';}).join(''):'<div class="empty">Ajoutez vos livreurs pour voir la caisse.</div>')+'</div>'+
     '<h3>Argent à rendre aux vendeurs</h3><div class="list">'+(ren.length?ren.map(c=>{const vt=(c.vendeur&&c.vendeur.tel)||(c.cli&&c.cli.tel);return '<div class="card stack"><div class="who"><b>N° '+(c.no||'')+' · '+F(c.march)+'</b><span class="muted">'+esc((c.vendeur&&c.vendeur.nom)||(c.cli&&c.cli.nom)||'Vendeur')+' · <span class="num" style="font-size:15px">'+telFmt(vt)+'</span></span></div><div class="row"><button class="b b-go b-sm" data-a="rendu" data-id="'+esc(c.id)+'">✓ Marquer rendu</button><a class="b b-line b-sm" target="_blank" rel="noopener" href="'+waLink(vt,'Bonjour, votre client a payé '+F(c.march)+' pour la course N° '+(c.no||'')+'. On vous envoie l\'argent. Merci !')+'">💬 Prévenir le vendeur</a></div></div>';}).join(''):'<div class="empty">Rien à rendre pour le moment.</div>')+'</div>';
 }
 
@@ -773,6 +813,12 @@ function capoReglages(app){
   app.innerHTML=accBanner()+
     '<h3 style="margin-top:4px">Lien pour vos clients</h3><div class="card stack">'+(link?'<div class="linkbox">'+esc(link)+'</div><div class="row"><button class="b b-line b-sm" data-a="copyLink">Copier</button><a class="b b-go b-sm" target="_blank" rel="noopener" href="'+waShare('Pour vos livraisons et moto-taxi avec '+(e.nom||'nous')+' : envoyez un vocal ou écrivez ici 👉 '+link)+'">💬 Partager sur WhatsApp</a><button class="b b-line b-sm" data-a="codeEdit">Changer le nom du lien</button></div><div class="hint">Mettez ce lien dans votre statut WhatsApp, sur TikTok et Instagram. Les demandes arrivent toutes seules dans Courses.</div>':'<div class="hint">Dans la démo il n\'y a pas de lien. Créez votre compte pour avoir le vôtre.</div>')+'</div>'+
     '<h3>Votre société</h3><form id="fEnt" class="card stack"><label class="f">Nom<input id="e_nom" value="'+esc(e.nom)+'"></label><label class="f">Numéro WhatsApp des clients<input id="e_tel" inputmode="tel" value="'+esc(telFmt(e.tel))+'"></label><button class="b b-sun" type="submit">Enregistrer</button></form>'+
+    '<h3>Wave et Orange Money</h3><form id="fPay" class="card stack"><div class="hint">Vos numéros et codes QR. Si le client paie à la livraison par Wave ou Orange Money, le livreur lui montre votre code QR et votre numéro : l\'argent arrive directement chez vous, pas chez le livreur.</div>'+
+    '<div class="grid2"><label class="f">Wave<input id="e_wave" inputmode="tel" value="'+esc(e.wave?telFmt(e.wave):'')+'" placeholder="77 000 00 00"></label><label class="f">Orange Money<input id="e_om" inputmode="tel" value="'+esc(e.om?telFmt(e.om):'')+'" placeholder="77 000 00 00"></label></div>'+
+    '<div class="grid2">'+qrPick('qrWave','e_qrw','QR Wave')+qrPick('qrOm','e_qro','QR Orange Money')+'</div>'+
+    '<input id="e_qrw" type="file" accept="image/*" class="vh"><input id="e_qro" type="file" accept="image/*" class="vh">'+
+    '<div class="hint">Code QR : dans l\'app Wave ou Orange Money (Max it), ouvrez « Mon code QR », faites une capture d\'écran et ajoutez-la ici. Quand le livreur dit « payé par Wave », vous vérifiez sur votre téléphone que l\'argent est arrivé, puis vous touchez « Reçu ».</div>'+
+    '<button class="b b-sun" type="submit">Enregistrer les numéros</button></form>'+
     '<h3>Photo de profil et couverture</h3><div class="card stack"><div class="hint">Facultatif. Elles s\'affichent en haut de votre page clients et dans l\'app, comme sur TikTok.</div>'+
     '<div class="ip"><label class="ip-cover" for="e_cover">'+(imgOk(e.cover)?'<img src="'+esc(e.cover)+'" alt="Couverture">':'<span>+ Couverture</span>')+'</label><label class="ip-logo" for="e_logo">'+(imgOk(e.logo)?'<img src="'+esc(e.logo)+'" alt="Photo de profil">':'<span>+ Photo</span>')+'</label></div>'+
     '<input id="e_cover" type="file" accept="image/*" class="vh"><input id="e_logo" type="file" accept="image/*" class="vh">'+
@@ -811,7 +857,10 @@ function renderLivreur(){
   app.innerHTML='<button class="dispo '+(me.dispo?'on':'off')+'" data-a="dispo" aria-pressed="'+!!me.dispo+'"><span>'+(me.dispo?'Je suis disponible':'Je suis occupé')+'<small>'+(me.dispo?'Vous recevez les nouvelles courses':'Touchez pour recevoir des courses')+'</small></span><span class="knob" aria-hidden="true"></span></button>'+
     '<h3>Mes courses · '+mine.length+'</h3><div class="list">'+(mine.length?mine.map(c=>courseCard(c,'mine')).join(''):'<div class="empty">Pas de course en cours.</div>')+'</div>'+
     (libreOk()?'<h3>Nouvelles courses à '+esc(me.zone)+' · '+libres.length+'</h3><div class="list">'+(!me.dispo?'<div class="empty">Mettez-vous « disponible » pour voir et prendre les courses.</div>':libres.length?libres.map(c=>courseCard(c,'libre')).join(''):'<div class="empty">Pas de nouvelle course. Vous recevrez un avis.</div>')+'</div>':'<div class="note blue" style="margin-top:14px">Le capo vous envoie les courses. Vous recevez un avis.</div>')+
-    '<h3>Ma journée</h3><div class="card"><div class="ca-row"><span>Courses livrées</span><b>'+k.cs.length+'</b></div><div class="ca-row"><span>Total des livraisons</span><b>'+F(k.total)+'</b></div>'+(k.march?'<div class="ca-row"><span>Marchandise encaissée</span><b>'+F(k.march)+'</b></div>':'')+'<div class="ca-row"><span>Ma part</span><b>'+(p.t==='mois'?'Salaire du mois':F(k.partL))+'</b></div><div class="due"><span>'+(k.aVerser>=0?'À verser au patron':'Le patron me doit')+'</span><span class="v">'+F(Math.abs(k.aVerser))+'</span></div>'+(()=>{const x=verseInfo(k);if(!x.v)return '';const m=x.paid>=0?'Versé au patron : '+F(x.paid):'Le patron m\'a payé : '+F(-x.paid);
+    '<h3>Ma journée</h3><div class="card"><div class="ca-row"><span>Courses livrées</span><b>'+k.cs.length+'</b></div><div class="ca-row"><span>Total des livraisons</span><b>'+F(k.total)+'</b></div>'+(k.march?'<div class="ca-row"><span>Marchandise encaissée</span><b>'+F(k.march)+'</b></div>':'')+
+      (k.digital?'<div class="ca-row"><span>Payé par Wave / OM (chez le patron)</span><b>− '+F(k.digital)+'</b></div>':'')+
+      (k.wait?'<div class="ca-row"><span>⏳ Wave / OM : le patron doit vérifier</span><b>'+F(k.wait)+'</b></div><div class="hint">Ces '+F(k.wait)+' sortent de « à verser » quand le patron voit l\'argent sur son téléphone.</div>':'')+
+      '<div class="ca-row"><span>Ma part</span><b>'+(p.t==='mois'?'Salaire du mois':F(k.partL))+'</b></div><div class="due"><span>'+(k.aVerser>=0?'À verser au patron':'Le patron me doit')+'</span><span class="v">'+F(Math.abs(k.aVerser))+'</span></div>'+(()=>{const x=verseInfo(k);if(!x.v)return '';const m=x.paid>=0?'Versé au patron : '+F(x.paid):'Le patron m\'a payé : '+F(-x.paid);
       if(x.reste===0)return '<div class="pill p-prise" style="margin-top:8px">'+m+' ✓</div>';
       return '<div class="note" style="margin-top:8px">'+m+'. '+(x.reste>0?'Reste à verser : <b>'+F(x.reste)+'</b>':'Le patron me doit encore : <b>'+F(-x.reste)+'</b>')+'</div>';})()+'</div>'+
     pushCard()+'<div style="margin-top:16px" class="stack"><button class="b b-line" data-a="mlogout">Sortir</button></div>';
@@ -825,7 +874,7 @@ function livreSheet(c){
   const need=!!c.codeReq,ph=!!(S.ent.photoLiv);
   openSheet('Livrer N° '+(c.no||''),'<form id="fLivre" class="stack" data-id="'+esc(c.id)+'">'+
     (+c.march||(c.paie==='dest'&&+c.prix)?'<div class="cod">💰 À encaisser : '+F((c.paie==='dest'?+c.prix:0)+(+c.march||0))+(+c.march?' (dont '+F(c.march)+' pour le vendeur)':'')+'</div>':'')+
-    (+c.prix?'':prixBlock(c))+
+    (+c.prix?'':prixBlock(c))+payBlock(c)+
     (need?'<label class="f">Code de celui qui reçoit<input id="lv_code" class="pinput" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••" required></label><div class="hint">Demandez le code à la personne quand elle a le colis en main.</div>':'')+
     '<div class="f"><span>'+(ph?'Photo du colis livré (obligatoire)':'Photo du colis livré (facultatif)')+'</span><label class="b b-line">📷 Prendre la photo<input id="lv_photo" type="file" accept="image/*" capture="environment" hidden></label></div><img id="lv_prev" class="photo-prev" alt="Photo du colis" hidden>'+
     '<button class="b b-done b-big" type="submit">✅ Confirmer la livraison</button></form>');
@@ -1025,7 +1074,7 @@ async function playVocal(id){const box=$('voc-'+id);if(!box)return;const btn=box
 
 // ===== Logo et couverture : envoyés dans le stockage, l'adresse va dans les réglages =====
 let UPLS=0;
-function uploadImgs(){if(MODE!=='capo'||!USER||!SB||UPLS)return;const ks=['logo','cover'].filter(k=>/^data:/.test(S.ent[k]||''));if(!ks.length||!navigator.onLine)return;UPLS=1;
+function uploadImgs(){if(MODE!=='capo'||!USER||!SB||UPLS)return;const ks=['logo','cover','qrWave','qrOm'].filter(k=>/^data:/.test(S.ent[k]||''));if(!ks.length||!navigator.onLine)return;UPLS=1;
   ks.reduce((pr,k)=>pr.then(()=>{const src=S.ent[k],path=USER.id+'/'+k+'-'+Date.now()+'.jpg';
     return SB.storage.from('livraison').upload(path,dataUrlBlob(src),{contentType:'image/jpeg',upsert:false}).then(r=>{if(r.error)throw r.error;
       const url=SB.storage.from('livraison').getPublicUrl(path).data.publicUrl;if(S.ent[k]===src)put('set','ent',{[k]:url});});}),Promise.resolve())
@@ -1077,6 +1126,9 @@ document.addEventListener('click',async e=>{
   if(a==='doAssign'){closeSheet();await doAssign(id,el.dataset.l);render();return;}
   if(a==='cancel'){if(el.dataset.arm!=='1'){el.dataset.arm='1';el.textContent='Sûr ? Touchez encore';return;}await doCancel(id);render();return;}
   if(a==='rendu'){await doRendu(id);render();return;}
+  if(a==='payOk'){await doPayOk(id,true);render();return;}
+  if(a==='payNon'){if(el.dataset.arm!=='1'){el.dataset.arm='1';el.textContent='Sûr ? Pas reçu';return;}await doPayOk(id,false);render();return;}
+  if(a==='copyNum'){copy(el.dataset.v||'','Numéro copié');return;}
   if(a==='stepCapo'){const c=crs(id);if(!c)return;if(el.dataset.arm!=='1'){el.dataset.arm='1';el.textContent='Sûr ? Touchez encore';return;}
     if(isZoneMgr())await mdo(c.statut==='prise'?'recup':'livre',id,{},'Fait');else doStep(id,c.statut==='prise'?'recuperee':'livree');render();return;}
   if(a==='recu'){const c=crs(id);if(!c)return;const t=recuText(c);openSheet('Reçu N° '+(c.no||''),'<div class="card" style="white-space:pre-wrap;user-select:all">'+esc(t)+'</div><div class="row" style="margin-top:10px"><button class="b b-line" data-a="copyTxt" data-t="'+esc(t)+'">Copier</button>'+(c.cli&&c.cli.tel?'<a class="b b-go" target="_blank" rel="noopener" href="'+waLink(c.cli.tel,t)+'">💬 Envoyer au client</a>':'')+'</div>');return;}
@@ -1111,7 +1163,7 @@ document.addEventListener('click',async e=>{
   if(a==='dispo'){const me=lv(MV.me.id)||MV.me;await mdo('dispo','',{v:!me.dispo});return;}
   if(a==='take'){await mdo('prendre',id,{},'Course pour vous ✓');buzz();return;}
   if(a==='mstep'){await mdo('recup',id,{},'Colis récupéré');return;}
-  if(a==='mlivre'){const c=crs(id);if(!c)return;if(c.codeReq||S.ent.photoLiv||!(+c.prix))return livreSheet(c);
+  if(a==='mlivre'){const c=crs(id);if(!c)return;if(c.codeReq||S.ent.photoLiv||!(+c.prix)||(doorAmt(c)>0&&payOpts().length>1))return livreSheet(c);
     if(el.dataset.arm!=='1'){el.dataset.arm='1';el.textContent='Sûr ? Touchez encore pour confirmer';return;}await mdo('livre',id,{},'Course livrée ✓');return;}
   // page clients
   if(a==='pmode'){PV.mode=PV.mode===el.dataset.v?'':el.dataset.v;PV.done=null;renderPublic();return;}
@@ -1139,10 +1191,13 @@ document.addEventListener('change',e=>{
   if(t.id==='e_moto'){if(lv(SOLO_ID))put('membres',SOLO_ID,{moto:t.value.trim().slice(0,40)});toast('Enregistré');return;}
   if(t.id==='e_photo'){put('set','ent',{photoLiv:t.checked});toast('Réglage enregistré');return;}
   if(t.name==='e_voc'){put('set','ent',{vocalJours:+t.value});toast('Réglage enregistré');return;}
-  if(t.name==='lv_px'){const w=$('lv_autrew');if(w)w.hidden=t.value!=='autre';if(t.value==='autre'&&$('lv_prix'))$('lv_prix').focus();return;}
+  if(t.name==='lv_px'){const w=$('lv_autrew');if(w)w.hidden=t.value!=='autre';if(t.value==='autre'&&$('lv_prix'))$('lv_prix').focus();updPay();return;}
+  if(t.name==='lv_pay'){updPay();return;}
+  if((t.id==='e_qrw'||t.id==='e_qro')&&t.files&&t.files[0]){const k=t.id==='e_qrw'?'qrWave':'qrOm';readPhoto(t.files[0],u=>{put('set','ent',{[k]:u});render();toast('Code QR ajouté');uploadImgs();},900,.92);t.value='';return;}
   if(t.name==='p_city'){PV.city=t.value;renderKeepPub();return;}
 });
 document.addEventListener('input',e=>{const t=e.target;
+  if(t.id==='lv_prix'){updPay();return;}
   if(t.id==='f_clitel'&&!$('fCourse').dataset.id){const c=clientHint(t.value),h=$('f_hint');if(!h)return;
     if(c){h.hidden=false;h.innerHTML='Client déjà connu : <b>'+esc(c.cli.nom||'sans nom')+'</b>'+(c.de?' · dernière adresse « '+esc(c.de)+' »':'')+' <button type="button" class="b b-line b-sm" data-a="useHint">Remplir</button>';h.dataset.id=c.id;}
     else if(isZoneMgr()&&tel9(t.value).length===9){mcall('client','',{tel:tel9(t.value)}).then(x=>{if(x&&(x.nom||x.de)){h.hidden=false;h.innerHTML='Client déjà connu : <b>'+esc(x.nom||'sans nom')+'</b>'+(x.de?' · « '+esc(x.de)+' »':'')+' <button type="button" class="b b-line b-sm" data-a="useHintZ" data-n="'+esc(x.nom||'')+'" data-d="'+esc(x.de||'')+'">Remplir</button>';}}).catch(()=>{});}
@@ -1186,15 +1241,19 @@ document.addEventListener('submit',async e=>{
   if(f.id==='fDep'){const m=Math.round(num(fv('d_m')));if(!m){toast('Écrivez le montant');return;}const lid=fv('d_lid'),l=lv(lid);
     await doDepense({lid,zone:l?l.zone:(isZoneMgr()?MV.me.zone:(V.zf||zones()[0])),date:fv('d_date')||today(),type:fv('d_type')||'autre',montant:m,note:fv('d_note').trim()});closeSheet();V.cm=(fv('d_date')||today()).slice(0,7);render();return;}
   if(f.id==='fCode'){const c=fv('c_code').trim().toLowerCase();try{const r=await rpc('liv_set_code',{p_code:c});ACC.code=r;lsSet(K('acc'),ACC);closeSheet();render();toast('Lien changé');}catch(err){$('c_err').textContent=errMsg(err);}return;}
+  if(f.id==='fPay'){const w=tel9(fv('e_wave')),o=tel9(fv('e_om'));if((w&&w.length!==9)||(o&&o.length!==9)){toast('Numéro Wave / Orange Money : 9 chiffres');return;}
+    put('set','ent',{wave:w,om:o});render();toast('Enregistré');return;}
   if(f.id==='fSoloLivre'){const c=crs(f.dataset.id);if(!c)return;let prix=0;
     if(!(+c.prix)){const px=fv('lv_px');if(!px){toast('Choisissez le prix de la course');return;}
       if(px==='autre'){prix=Math.round(num(fv('lv_prix')));if(prix<=0){toast('Écrivez le prix');return;}}else if(px!=='patron')prix=+px;}
-    closeSheet();if(prix>0)put('courses',c.id,{prix});doStep(c.id,'livree');render();return;}
+    const pay=fv('lv_pay'),door=(c.paie==='dest'?(prix||+c.prix||0):0)+(+c.march||0),p={};if(prix>0)p.prix=prix;
+    if(['cash','wave','om'].includes(pay)&&door>0)Object.assign(p,{payLiv:pay,payLivM:door},pay!=='cash'?{payOk:true}:{});
+    closeSheet();if(Object.keys(p).length)put('courses',c.id,p);doStep(c.id,'livree');render();return;}
   if(f.id==='fLivre'){const c=crs(f.dataset.id);if(!c)return;const code=digits(fv('lv_code')),im=$('lv_prev'),photo=im&&im.dataset.u?im.dataset.u.split(',')[1]:'';
     let prix=0;if(!(+c.prix)){const px=fv('lv_px');if(!px){toast('Choisissez le prix de la course');return;}
       if(px==='autre'){prix=Math.round(num(fv('lv_prix')));if(prix<=0){toast('Écrivez le prix');return;}}else if(px!=='patron')prix=+px;}
     if(c.codeReq&&code.length!==4){toast('Le code a 4 chiffres');return;}if(S.ent.photoLiv&&!photo){toast('Prenez la photo du colis');return;}
-    closeSheet();await mdo('livre',c.id,{code,photo,prix},'Course livrée ✓');return;}
+    const pay=fv('lv_pay');closeSheet();await mdo('livre',c.id,Object.assign({code,photo,prix},pay?{pay}:{}),'Course livrée ✓');return;}
   if(f.id==='fClient'){const tel=tel9(fv('k_tel'));if(tel.length<9){toast('Écrivez votre numéro (9 chiffres)');return;}
     const typ=fv('k_type');const tar=(PUB.tarifs||[]).find(t=>t.z===PV.city&&(typ==='personne'?/taxi/i.test(t.lieu):!/taxi/i.test(t.lieu)));
     pubSend({zone:PV.city,type:typ,cli:{tel},de:fv('k_de').trim(),a:fv('k_a').trim(),dest:{tel:tel9(fv('k_dest'))},paie:fv('k_paie'),mode:fv('k_mode'),march:Math.round(num(fv('k_march'))),prix:tar?tar.prix:0,depos:PV.pos||undefined});return;}
