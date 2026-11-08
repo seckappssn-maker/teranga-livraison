@@ -954,10 +954,15 @@ function demoSeed(){
 
 // ===== Page des clients (commande.html?c=CODE) et page de celui qui reçoit (…&d=ID&k=TK) =====
 const CCODE=(Q.get('c')||'').toLowerCase();
-let PUB=lsGet('tl-pub-'+CCODE,null), MINE=lsGet('tl-mine-'+CCODE,[]), SUIVI={}, PV={city:'',mode:'',done:null,vocal:null,rec:false,recSec:0,micErr:false,pos:null,posBusy:false,sending:false};
+let PUB=lsGet('tl-pub-'+CCODE,null), MINE=lsGet('tl-mine-'+CCODE,[]), SUIVI={}, PV={city:'',mode:'',done:null,vocal:null,rec:false,recSec:0,micErr:false,pos:null,posBusy:false,sending:false,f:{}};
+// ce que le client a déjà écrit : gardé pendant qu'il remplit, pour que rien ne s'efface
+const pf=k=>esc(PV.f[k]==null?'':PV.f[k]);
 async function pubLoad(){try{const d=await rpc('liv_public',{p_code:CCODE});if(d&&d.ok){PUB=d;lsSet('tl-pub-'+CCODE,d);}else PUB={ok:false};}catch(e){if(!PUB)NETMSG=errMsg(e);}render();pubSuivi();}
 async function pubSuivi(){const act=MINE.filter(m=>!m.fin||!m.last).slice(-8);for(const m of act){try{const s=await rpc('liv_suivi',{p_code:CCODE,p_id:m.id,p_tk:m.tk});if(s&&s.ok){SUIVI[m.id]=s;if(s.statut==='livree'||s.statut==='annulee'){m.fin=1;m.last={statut:s.statut,t:s.t,prix:s.prix,zone:s.zone,de:s.de,type:s.type};}}}catch(e){}}
-  lsSet('tl-mine-'+CCODE,MINE);if(MODE==='public'&&!PV.rec)renderKeepPub();}
+  lsSet('tl-mine-'+CCODE,MINE);
+  // on met à jour seulement « Mes courses » : le formulaire que le client remplit ne bouge pas
+  if(MODE==='public'){const b=$('pubMine');if(b)b.innerHTML=mineHtml();else if(!PV.rec)renderKeepPub();}}
+function mineHtml(){const mine=MINE.slice().reverse().slice(0,8);return mine.length?'<h3>Mes courses</h3><div class="list">'+mine.map(suiviCard).join('')+'</div>':'';}
 function renderKeepPub(){const y=window.scrollY;renderPublic();window.scrollTo(0,y);}
 
 // ----- aide quand le téléphone bloque le micro ou la position -----
@@ -1003,8 +1008,7 @@ function renderPublic(){
   if(PV.mode)h+=PV.mode==='vocal'?pubVocal():pubForm();
   const tar=(e.tarifs||[]).filter(t=>t.z===PV.city);
   if(tar.length)h+='<h3>Prix à '+esc(PV.city)+'</h3><div class="card">'+tar.map(t=>'<div class="ca-row"><span>'+esc(t.lieu)+'</span><b>'+F(t.prix)+'</b></div>').join('')+'<div class="hint" style="margin-top:6px">Prix indicatifs. Le livreur vous confirme le prix.</div></div>';
-  const mine=MINE.slice().reverse().slice(0,8);
-  if(mine.length)h+='<h3>Mes courses</h3><div class="list">'+mine.map(suiviCard).join('')+'</div>';
+  h+='<div id="pubMine">'+mineHtml()+'</div>';
   h+='<div class="hint" style="text-align:center;margin-top:18px">Avec Teranga Livraison · Seck Apps</div>';
   app.innerHTML=h;
 }
@@ -1012,21 +1016,21 @@ function posBlock(){return '<div class="card stack" style="background:var(--sunk
   '<button type="button" class="b b-line" data-a="posGet"'+(PV.posBusy?' disabled':'')+'>'+(PV.posBusy?'<span class="spin"></span> Recherche…':'📍 Envoyer ma position (où on me prend)')+'</button>'+(GEOERR?geoHelp():'<div class="hint">Le livreur arrive directement chez vous, sans chercher.</div>'))+'</div>';}
 function pubVocal(){
   if(PV.vocal)return '<div class="card stack" style="margin-top:12px"><h2>Votre vocal</h2><audio controls src="'+esc(PV.vocal.url)+'" style="width:100%"></audio>'+posBlock()+
-    '<label class="f">Mon numéro (pour vous rappeler)<input id="v_tel" inputmode="tel" placeholder="77 000 00 00" value="'+esc(lsGet('tl-montel',''))+'" style="font-size:22px;font-family:var(--display);font-weight:800;letter-spacing:.05em"></label>'+
+    '<label class="f">Mon numéro (pour vous rappeler)<input id="v_tel" inputmode="tel" placeholder="77 000 00 00" value="'+(PV.f.v_tel!=null?pf('v_tel'):esc(lsGet('tl-montel','')))+'" style="font-size:22px;font-family:var(--display);font-weight:800;letter-spacing:.05em"></label>'+
     '<div class="row"><button class="b b-line" data-a="vAgain">🔁 Recommencer</button><button class="b b-go b-big" data-a="vSend"'+(PV.sending?' disabled':'')+'>'+(PV.sending?'<span class="spin"></span> Envoi…':'Envoyer le vocal')+'</button></div></div>';
   return '<div class="card stack" style="margin-top:12px;text-align:center"><div>Dites où on prend, où on livre, et ce qu\'on transporte.</div>'+
     '<button class="recbtn'+(PV.rec?' on':'')+'" data-a="rec" aria-pressed="'+PV.rec+'">'+(PV.rec?'■ Arrêter':'● Parler')+'</button><div class="timer" aria-live="polite">0:'+pad(PV.recSec)+' / 1:00</div>'+
     (PV.micErr?micHelp():'<div class="hint">Touchez une fois pour parler, encore une fois pour arrêter. 1 minute au plus.</div>')+'</div>';
 }
 function pubForm(){const t=lsGet('tl-montel','');
-  return '<form id="fClient" class="card stack" style="margin-top:12px">'+grp('Pour quoi ?',chips('k_type',[['colis','📦 Un colis'],['personne','🛵 Me transporter']],'colis'))+
-    '<label class="f">Où on prend ?<input id="k_de" placeholder="Quartier, repère" required></label>'+posBlock()+
-    '<label class="f">Où on livre ?<input id="k_a" placeholder="Quartier, repère" required></label>'+
-    '<label class="f">Mon numéro<input id="k_tel" inputmode="tel" placeholder="77 000 00 00" value="'+esc(t)+'" required></label>'+
-    '<label class="f">Numéro de celui qui reçoit<input id="k_dest" inputmode="tel" placeholder="Facultatif"></label>'+
-    grp('Qui paie la livraison ?',chips('k_paie',[['exp','Moi'],['dest','Celui qui reçoit']],'exp'))+
-    grp('Paiement',chips('k_mode',[['cash','Espèces'],['wave','Wave'],['om','Orange Money']],'cash'))+
-    '<label class="f">Je suis vendeur : argent à encaisser (F)<input id="k_march" inputmode="numeric" placeholder="0 si rien"><span class="hint" style="font-weight:500">Le livreur encaisse le prix de votre article et on vous le rend.</span></label>'+
+  return '<form id="fClient" class="card stack" style="margin-top:12px">'+grp('Pour quoi ?',chips('k_type',[['colis','📦 Un colis'],['personne','🛵 Me transporter']],PV.f.k_type||'colis'))+
+    '<label class="f">Où on prend ?<input id="k_de" placeholder="Quartier, repère" value="'+pf('k_de')+'" required></label>'+posBlock()+
+    '<label class="f">Où on livre ?<input id="k_a" placeholder="Quartier, repère" value="'+pf('k_a')+'" required></label>'+
+    '<label class="f">Mon numéro<input id="k_tel" inputmode="tel" placeholder="77 000 00 00" value="'+(PV.f.k_tel!=null?pf('k_tel'):esc(t))+'" required></label>'+
+    '<label class="f">Numéro de celui qui reçoit<input id="k_dest" inputmode="tel" placeholder="Facultatif" value="'+pf('k_dest')+'"></label>'+
+    grp('Qui paie la livraison ?',chips('k_paie',[['exp','Moi'],['dest','Celui qui reçoit']],PV.f.k_paie||'exp'))+
+    grp('Paiement',chips('k_mode',[['cash','Espèces'],['wave','Wave'],['om','Orange Money']],PV.f.k_mode||'cash'))+
+    '<label class="f">Je suis vendeur : argent à encaisser (F)<input id="k_march" inputmode="numeric" placeholder="0 si rien" value="'+pf('k_march')+'"><span class="hint" style="font-weight:500">Le livreur encaisse le prix de votre article et on vous le rend.</span></label>'+
     '<button class="b b-go b-big" type="submit"'+(PV.sending?' disabled':'')+'>'+(PV.sending?'<span class="spin"></span> Envoi…':'Envoyer ma demande')+'</button></form>';
 }
 function pubDestText(m){return 'Bonjour, je vous envoie un colis avec '+((PUB&&PUB.nom)||'Teranga Livraison')+' (course N° '+m.no+').'+(m.cl?' Votre code de livraison : '+m.cl+'. Donnez-le au livreur seulement quand vous avez le colis.':'')+' Touchez ce lien pour envoyer votre position au livreur : '+SITE+'commande.html?c='+CCODE+'&d='+m.id+'&k='+m.dtk;}
@@ -1058,7 +1062,7 @@ async function pubSend(p){
   if(PV.sending)return;PV.sending=true;renderKeepPub();
   try{const r=await rpc('liv_demande',{p_code:CCODE,p});lsSet('tl-montel',telFmt(p.cli.tel));
     MINE.push({id:r.id,no:r.no,tk:r.tk,dtk:r.dtk,cl:r.cl||'',t:Date.now()});lsSet('tl-mine-'+CCODE,MINE);
-    PV.done=r.id;PV.mode='';PV.vocal=null;PV.pos=null;PV.recSec=0;buzz();window.scrollTo(0,0);}
+    PV.done=r.id;PV.mode='';PV.vocal=null;PV.pos=null;PV.recSec=0;PV.f={};buzz();window.scrollTo(0,0);}
   catch(e){toast(errMsg(e));}
   PV.sending=false;renderPublic();pubSuivi();
 }
@@ -1211,8 +1215,10 @@ document.addEventListener('change',e=>{
   if(t.name==='lv_pay'){updPay();return;}
   if((t.id==='e_qrw'||t.id==='e_qro')&&t.files&&t.files[0]){const k=t.id==='e_qrw'?'qrWave':'qrOm';readPhoto(t.files[0],u=>{put('set','ent',{[k]:u});render();toast('Code QR ajouté');uploadImgs();},900,.92);t.value='';return;}
   if(t.name==='p_city'){PV.city=t.value;renderKeepPub();return;}
+  if(t.name==='k_type'||t.name==='k_paie'||t.name==='k_mode'){PV.f[t.name]=t.value;return;}
 });
 document.addEventListener('input',e=>{const t=e.target;
+  if(/^(k_de|k_a|k_tel|k_dest|k_march|v_tel)$/.test(t.id||'')){PV.f[t.id]=t.value;return;}
   if(t.id==='lv_prix'){updPay();return;}
   if(t.id==='f_clitel'&&!$('fCourse').dataset.id){const c=clientHint(t.value),h=$('f_hint');if(!h)return;
     if(c){h.hidden=false;h.innerHTML='Client déjà connu : <b>'+esc(c.cli.nom||'sans nom')+'</b>'+(c.de?' · dernière adresse « '+esc(c.de)+' »':'')+' <button type="button" class="b b-line b-sm" data-a="useHint">Remplir</button>';h.dataset.id=c.id;}
