@@ -442,7 +442,7 @@ function optim(act,id,arg){const c=S.courses[id],now=Date.now(),me=MV&&MV.me;arg
     if(['cash','wave','om'].includes(arg.pay)&&c.paie!=='dest'&&+c.prix>0){c.payRec=arg.pay;c.payRecM=+c.prix;if(arg.pay!=='cash')c.payRecOk=false;}}
   if(act==='livre'){c.statut='livree';t.livree=now;if(!t.recup)t.recup=now;if(+arg.prix>0&&!(+c.prix)){c.prix=+arg.prix;c.prixLiv=true;}
     if(['cash','wave','om'].includes(arg.pay)&&doorAmt(c)>0){c.payLiv=arg.pay;c.payLivM=doorAmt(c);if(arg.pay!=='cash')c.payOk=false;}}
-  if(act==='payok'){if(arg.w==='rec'){if(arg.v)c.payRecOk=true;else{c.payRec='cash';c.payRecNon=true;c.payRecOk=false;}}
+  if(act==='payok'){if(arg.w==='rec'){if(arg.v)c.payRecOk=true;else Object.assign(c,payRecNonPatch(c));}
     else if(arg.v)c.payOk=true;else{c.payLiv='cash';c.payNon=true;c.payOk=false;}}
   if(act==='envoyer'){c.lid=arg.lid;if(c.statut==='nouvelle'){c.statut='prise';t.prise=now;}}
   if(act==='annuler')c.statut='annulee';
@@ -479,9 +479,13 @@ function doAssign(id,lid){const c=crs(id),l=lv(lid);if(!c||!l)return;
   if(isZoneMgr())return mdo('envoyer',id,{lid},'Envoyée à '+l.nom);
   const p={lid,par:'capo'};if(c.statut==='nouvelle'){p.statut='prise';p.t=Object.assign({},c.t,{prise:Date.now()});}put('courses',id,p);toast('Course N° '+(c.no||'')+' envoyée à '+l.nom);}
 function doCancel(id){if(isZoneMgr())return mdo('annuler',id,{},'Course annulée');put('courses',id,{statut:'annulee',par:'capo'});toast('Course annulée');}
-function doPayOk(id,ok,w){const c=crs(id);if(!c)return;const m=ok?'Paiement vérifié ✓':'Compté en espèces : le livreur doit le verser',rec=w==='rec';
+// « Pas reçu » : si c'est le livreur qui a dit Wave, l'argent reste à sa charge ; si c'est le client qui a payé d'avance :
+// avant le ramassage on enlève le paiement (le livreur encaissera), après, c'est le client qui doit l'argent ('non')
+function payRecNonPatch(c){if(!c.payPre)return {payRec:'cash',payRecNon:true,payRecOk:false};
+  return c.statut==='nouvelle'||c.statut==='prise'?{payRec:null,payRecM:null,payRecOk:null,payPre:false,payPreNon:true}:{payRec:'non',payRecOk:false,payPreNon:true};}
+function doPayOk(id,ok,w){const c=crs(id);if(!c)return;const rec=w==='rec',m=ok?'Paiement vérifié ✓':rec&&c.payPre?'Noté : le client n\'a pas payé':'Compté en espèces : le livreur doit le verser';
   if(isZoneMgr())return mdo('payok',id,{v:!!ok,w:rec?'rec':''},m);
-  put('courses',id,rec?(ok?{payRecOk:true,payPar:'capo'}:{payRec:'cash',payRecNon:true,payRecOk:false,payPar:'capo'}):(ok?{payOk:true,payPar:'capo'}:{payLiv:'cash',payNon:true,payOk:false,payPar:'capo'}));toast(m);}
+  put('courses',id,rec?(ok?{payRecOk:true,payPar:'capo'}:Object.assign(payRecNonPatch(c),{payPar:'capo'})):(ok?{payOk:true,payPar:'capo'}:{payLiv:'cash',payNon:true,payOk:false,payPar:'capo'}));toast(m);}
 function doRendu(id){if(isZoneMgr())return mdo('rendu',id,{},'Argent rendu au vendeur');put('courses',id,{rendu:true});toast('Argent rendu au vendeur');}
 function doStep(id,to){const c=crs(id);if(!c)return;
   if(MODE==='membre')return mdo(to==='livree'?'livre':'recup',id,{},to==='livree'?'Course livrée ✓':'Colis récupéré');
@@ -499,24 +503,24 @@ function doDepenseDel(id){if(isZoneMgr())return mdo('depense_del',id,{});del('de
 const doorAmt=c=>(c.paie==='dest'?+c.prix||0:0)+(+c.march||0);   // ce que celui qui reçoit paie à la porte
 const payWait=c=>!!c.payLiv&&c.payLiv!=='cash'&&!c.payOk;          // Wave / OM pas encore vérifié par le patron
 const payDig=c=>!!c.payLiv&&c.payLiv!=='cash'&&!!c.payOk;          // Wave / OM vérifié : l'argent est chez le patron
-const recWait=c=>!!c.payRec&&c.payRec!=='cash'&&!c.payRecOk;       // pareil au ramassage, quand l'expéditeur paie
-const recSheetOk=c=>c.paie!=='dest'&&+c.prix>0&&payOpts().length>1;
+const recWait=c=>!!c.payRec&&c.payRec!=='cash'&&c.payRec!=='non'&&!c.payRecOk;       // pareil au ramassage, quand l'expéditeur paie
+const recSheetOk=c=>c.paie!=='dest'&&!c.payRec&&+c.prix>0&&payOpts().length>1;
 function payOpts(){const e=S.ent||{};return [['cash','💵 Espèces']].concat(e.wave||imgOk(e.qrWave)?[['wave','📱 Wave']]:[]).concat(e.om||imgOk(e.qrOm)?[['om','📱 Orange Money']]:[]);}
 // ===== Caisse : ce que chaque livreur doit verser =====
 function caisse(l,date){
   const cs=L('courses').filter(c=>c.lid===l.id&&c.statut==='livree'&&dayOf(c.t&&c.t.livree)===date);
   // prix déjà chez le patron : payé par Wave / OM au départ (ancienne façon), ou à la porte et vérifié
-  const dPx=c=>c.paie==='dest'?(c.payLiv?payDig(c):c.mode!=='cash'):(c.payRec?c.payRec!=='cash'&&!!c.payRecOk:c.mode!=='cash');
+  const dPx=c=>c.paie==='dest'?(c.payLiv?payDig(c):c.mode!=='cash'):(c.payRec?c.payRec!=='cash'&&c.payRec!=='non'&&!!c.payRecOk:c.mode!=='cash');
   const dP=sum(cs,c=>dPx(c)?+c.prix||0:0),dM=sum(cs.filter(payDig),c=>+c.march);
   const wl=cs.filter(recWait).map(c=>({c,w:'rec',m:+c.payRecM||+c.prix||0})).concat(cs.filter(payWait).map(c=>({c,w:'liv',m:+c.payLivM||doorAmt(c)})));
-  const total=sum(cs,c=>+c.prix),digital=dP+dM,march=sum(cs,c=>+c.march),wait=sum(wl,x=>x.m);
+  const total=sum(cs,c=>+c.prix),digital=dP+dM,march=sum(cs,c=>+c.march),wait=sum(wl,x=>x.m),nonP=sum(cs.filter(c=>c.payRec==='non'),c=>+c.prix||0);
   const p=l.paie||{t:'pct',v:30};let partL,partP;
   if(p.t==='pct'){partL=Math.round(total*(+p.v||0)/100);partP=total-partL;}
   else if(p.t==='jour'){partP=cs.length?(+p.v||0):0;partL=total-partP;}
   else{partL=0;partP=total;}
-  const aVerser=partP-digital+march;
+  const aVerser=partP-digital-nonP+march;   // nonP : le client n'a pas payé d'avance, le livreur n'a rien encaissé
   const v=L('versements').find(x=>x.lid===l.id&&x.date===date);
-  return {cs,total,digital,dP,dM,march,partL,partP,aVerser,v,wl,wait};
+  return {cs,total,digital,dP,dM,march,partL,partP,aVerser,v,wl,wait,nonP};
 }
 // versement du jour : déjà versé, et ce qui reste si d'autres courses sont arrivées après
 function verseInfo(k){const v=k.v;if(!v)return {v:null,paid:0,reste:k.aVerser};const paid=+v.montant||0;return {v,paid,reste:k.aVerser-paid};}
@@ -599,7 +603,8 @@ function vocalHtml(c){if(!c.vocal)return '';
   return '<div class="vocal" id="voc-'+c.id+'">🎤 Vocal du client'+(c.vocal.dur?' · 0:'+pad(Math.min(59,c.vocal.dur)):'')+'<button class="b b-line b-sm" data-a="voc" data-id="'+c.id+'">▶️ Écouter</button></div>';}
 function moneyHtml(c,forLiv){
   const prix=+c.prix?'<b>'+F(c.prix)+'</b>':'<b>Prix à fixer</b>';
-  return '<div class="money"><span>'+prix+'</span><span>Payé par '+(c.paie==='dest'?'celui qui reçoit':"l'expéditeur")+'</span><span>'+(MODEP[c.mode]||'Espèces')+'</span></div>'+
+  return '<div class="money"><span>'+prix+'</span><span>Payé par '+(c.paie==='dest'?'celui qui reçoit':"l'expéditeur")+'</span><span>'+(MODEP[c.payRec==='wave'||c.payRec==='om'?c.payRec:c.mode]||'Espèces')+'</span></div>'+
+    (c.payPre&&(c.payRec==='wave'||c.payRec==='om')?'<div class="cod" style="background:var(--go-soft);color:var(--go)">✅ Le client a déjà payé '+F(+c.payRecM||c.prix)+' par '+MODEP[c.payRec]+(forLiv?' : n\'encaissez pas la livraison':'')+'</div>':'')+
     (+c.march?'<div class="cod">💰 Encaisser pour le vendeur : '+F(c.march)+(c.statut==='livree'&&!forLiv?(c.rendu?' · rendu ✓':' · à rendre'):'')+'</div>':'')+
     (c.vendeur&&c.vendeur.nom?'<div class="small muted">🛍️ Vendeur : '+esc(c.vendeur.nom)+(c.vendeur.tel?' · '+telFmt(c.vendeur.tel):'')+'</div>':'');
 }
@@ -614,10 +619,11 @@ function payBlock(c){const o=payOpts();if(o.length<2||!(doorAmt(c)>0||(c.paie===
   const def=c.paie==='dest'&&(c.mode==='wave'||c.mode==='om')&&o.some(x=>x[0]===c.mode)?c.mode:'cash';
   return grp('Le client paie comment ?',chips('lv_pay',o,def))+'<div id="lv_paybox">'+payBox(def,payNow(c))+'</div>';}
 function updPay(){const f=$('fLivre')||$('fSoloLivre')||$('fRecup'),b=$('lv_paybox');if(!f||!b)return;const c=crs(f.dataset.id);if(c)b.innerHTML=payBox(fv('lv_pay')||'cash',f.id==='fRecup'?+c.prix||0:payNow(c));}
-function payRecLine(c,admin){if(!c.payRec)return '';const m=F(+c.payRecM||+c.prix||0);
+function payRecLine(c,admin){if(!c.payRec)return c.payPreNon?'<div class="small" style="color:var(--bad)">✕ Paiement d\'avance pas reçu : le livreur encaisse au ramassage</div>':'';const m=F(+c.payRecM||+c.prix||0);
+  if(c.payRec==='non')return '<div class="small" style="color:var(--bad)">✕ Le client n\'a pas payé d\'avance : '+F(c.prix)+' à lui réclamer (pas chez le livreur)</div>';
   if(c.payRec==='cash')return c.payRecNon?'<div class="small" style="color:var(--bad)">✕ Wave / OM du ramassage pas reçu : compté en espèces chez le livreur ('+m+')</div>':'';
   const nm=MODEP[c.payRec]||'Wave';if(c.payRecOk)return '<div class="small">📱 Ramassage : payé '+m+' par '+nm+' · <b style="color:var(--go)">vérifié ✓</b></div>';
-  return '<div class="note"><b>📱 L\'expéditeur a payé '+m+' par '+nm+'</b> · ⏳ à vérifier sur votre téléphone'+(admin?'<div class="row" style="margin-top:6px"><button class="b b-go b-sm" data-a="payOk" data-w="rec" data-id="'+esc(c.id)+'">✓ Reçu sur mon '+nm+'</button><button class="b b-bad b-sm" data-a="payNon" data-w="rec" data-id="'+esc(c.id)+'">Pas reçu</button></div>':'')+'</div>';}
+  return '<div class="note"><b>📱 '+(c.payPre?'Le client a payé d\'avance ':'L\'expéditeur a payé ')+m+' par '+nm+'</b> · ⏳ à vérifier sur votre téléphone'+(admin?'<div class="row" style="margin-top:6px"><button class="b b-go b-sm" data-a="payOk" data-w="rec" data-id="'+esc(c.id)+'">✓ Reçu sur mon '+nm+'</button><button class="b b-bad b-sm" data-a="payNon" data-w="rec" data-id="'+esc(c.id)+'">Pas reçu</button></div>':'')+'</div>';}
 function payRecBlock(c){const o=payOpts();if(!recSheetOk(c))return '';const def=(c.mode==='wave'||c.mode==='om')&&o.some(x=>x[0]===c.mode)?c.mode:'cash';
   return grp('L\'expéditeur paie comment ?',chips('lv_pay',o,def))+'<div id="lv_paybox">'+payBox(def,+c.prix||0)+'</div>';}
 function recSheet(c,seul){
@@ -630,7 +636,7 @@ function payLiveLine(c,admin){if(!c.payLiv||c.statut!=='livree')return '';const 
   return '<div class="note"><b>📱 Le client a payé '+m+' par '+nm+'</b> · ⏳ à vérifier sur votre téléphone'+(admin?'<div class="row" style="margin-top:6px"><button class="b b-go b-sm" data-a="payOk" data-id="'+esc(c.id)+'">✓ Reçu sur mon '+nm+'</button><button class="b b-bad b-sm" data-a="payNon" data-id="'+esc(c.id)+'">Pas reçu</button></div>':'')+'</div>';}
 function payWaitHtml(wl){if(!wl.length)return '';
   return '<div class="note" style="margin-top:8px"><b>⏳ Wave / Orange Money à vérifier</b><div class="hint">Regardez sur votre téléphone si l\'argent est arrivé, avant de prendre son versement. Tant que ce n\'est pas vérifié, c\'est compté dans ce qu\'il doit.</div>'+
-    wl.map(({c,w,m})=>'<div class="who" style="margin-top:6px"><span>N° '+(c.no||'')+' · <b>'+F(m)+'</b> · '+(MODEP[w==='rec'?c.payRec:c.payLiv]||'')+(w==='rec'?' · ramassage':'')+'</span><span class="row"><button class="b b-go b-sm" data-a="payOk" data-w="'+w+'" data-id="'+esc(c.id)+'">✓ Reçu</button><button class="b b-bad b-sm" data-a="payNon" data-w="'+w+'" data-id="'+esc(c.id)+'">Pas reçu</button></span></div>').join('')+'</div>';}
+    wl.map(({c,w,m})=>'<div class="who" style="margin-top:6px"><span>N° '+(c.no||'')+' · <b>'+F(m)+'</b> · '+(MODEP[w==='rec'?c.payRec:c.payLiv]||'')+(w==='rec'?(c.payPre?' · payé d\'avance':' · ramassage'):'')+'</span><span class="row"><button class="b b-go b-sm" data-a="payOk" data-w="'+w+'" data-id="'+esc(c.id)+'">✓ Reçu</button><button class="b b-bad b-sm" data-a="payNon" data-w="'+w+'" data-id="'+esc(c.id)+'">Pas reçu</button></span></div>').join('')+'</div>';}
 function qrPick(k,inp,lab){const u=S.ent[k];return '<div class="f"><span>'+lab+'</span><label class="qrpick" for="'+inp+'">'+(imgOk(u)?'<img src="'+esc(u)+'" alt="'+lab+'">':'<span>+ Ajouter</span>')+'</label>'+(u?'<button type="button" class="b b-bad b-sm" data-a="imgDel" data-v="'+k+'">Retirer</button>':'')+'</div>';}
 function contactHtml(c,full){
   const p=c.cli&&c.cli.tel;let h='';
@@ -643,7 +649,7 @@ function prixLivHtml(c){const ts=(S.ent.tarifs||[]).filter(t=>t.z===c.zone&&+t.p
   const l=lv(c.lid),p=c.cli&&c.cli.tel,msg='Bonjour, c\'est '+(S.ent.nom||'Teranga Livraison')+'. Pour votre course N° '+(c.no||'')+(l?' avec '+l.nom:'')+', le livreur a noté '+F(c.prix)+'. C\'est bien ce que vous avez payé ? Merci !';
   return '<div class="note"'+(bas?' style="border-color:var(--bad)"':'')+'>✍️ Prix noté par le livreur : <b>'+F(c.prix)+'</b>'+(bas?' · <b style="color:var(--bad)">⚠️ moins que vos tarifs ('+F(mn)+')</b>':'')+
     (p?'<div style="margin-top:6px"><a class="b b-line b-sm" target="_blank" rel="noopener" href="'+waLink(p,msg)+'">💬 Vérifier avec le client</a></div>':'')+'</div>';}
-function soloActions(c,open){let h='';const aRec=c.paie!=='dest'&&(c.mode==='cash'||recSheetOk(c))?+c.prix||0:0,aLiv=(c.mode==='cash'&&c.paie==='dest'?+c.prix||0:0)+(+c.march||0);
+function soloActions(c,open){let h='';const aRec=c.paie!=='dest'&&!c.payRec&&(c.mode==='cash'||recSheetOk(c))?+c.prix||0:0,aLiv=(c.mode==='cash'&&c.paie==='dest'?+c.prix||0:0)+(+c.march||0);
   if(c.cl&&open)h+='<div class="small">🔐 Code de livraison : <b class="code">'+esc(c.cl)+'</b> <span class="muted">(celui qui reçoit le connaît)</span></div>';
   if(actif(c)){const q=c.statut==='prise'?c.de:c.a,pos=c.statut==='prise'?c.depos:c.apos;
     if(q||posOk(pos))h+='<a class="b b-line" href="'+mapLink(q,c.zone,pos)+'" target="_blank" rel="noopener">🗺️ Itinéraire'+(posOk(pos)?' (position exacte)':' vers « '+esc(q)+' »')+'</a>';}
@@ -687,7 +693,7 @@ function courseCard(c,ctx){
   }else if(ctx==='mine'){
     const q=c.statut==='prise'?c.de:c.a,pos=c.statut==='prise'?c.depos:c.apos;
     if(q||posOk(pos))h+='<a class="b b-line" href="'+mapLink(q,c.zone,pos)+'" target="_blank" rel="noopener">🗺️ Itinéraire'+(posOk(pos)?' (position exacte)':' vers « '+esc(q)+' »')+'</a>';
-    const aRec=c.paie!=='dest'&&(c.mode==='cash'||recSheetOk(c))?+c.prix||0:0,aLiv=(c.mode==='cash'&&c.paie==='dest'?+c.prix||0:0)+(+c.march||0);
+    const aRec=c.paie!=='dest'&&!c.payRec&&(c.mode==='cash'||recSheetOk(c))?+c.prix||0:0,aLiv=(c.mode==='cash'&&c.paie==='dest'?+c.prix||0:0)+(+c.march||0);
     if(c.statut==='prise')h+='<button class="b b-pick b-big" data-a="mstep" data-v="recup" data-id="'+c.id+'">📦 RÉCUPÉRÉ'+(aRec>0?' · j\'encaisse '+F(aRec):'')+'</button>';
     if(c.statut==='recuperee')h+='<button class="b b-done b-big" data-a="mlivre" data-id="'+c.id+'">✅ LIVRÉ'+(aLiv>0?' · j\'encaisse '+F(aLiv):'')+'</button>';
   }
@@ -795,6 +801,7 @@ function capoCaisse(app){
         '<div class="ca-row"><span>Courses livrées</span><b>'+k.cs.length+'</b></div><div class="ca-row"><span>Total des livraisons</span><b>'+F(k.total)+'</b></div>'+
         (k.digital?'<div class="ca-row"><span>Payé par Wave / OM (déjà chez vous)</span><b>− '+F(k.digital)+'</b></div>':'')+
         (k.wait?'<div class="ca-row"><span>⏳ Wave / OM pas encore vérifié</span><b>'+F(k.wait)+'</b></div>':'')+
+        (k.nonP?'<div class="ca-row"><span>Pas payé par le client (à lui réclamer)</span><b>− '+F(k.nonP)+'</b></div>':'')+
         (k.march?'<div class="ca-row"><span>Marchandise encaissée (à rendre aux vendeurs)</span><b>+ '+F(k.march)+'</b></div>':'')+
         '<div class="ca-row"><span>'+((l.paie||{}).t==='mois'?'Sa part (il a son salaire)':'Sa part')+'</span><b>'+F(k.partL)+'</b></div>'+
         '<div class="due"><span>'+(due>=0?'À verser au patron':'Le patron lui doit')+'</span><span class="v">'+F(Math.abs(due))+'</span></div></div>'+
@@ -996,7 +1003,7 @@ function renderPublic(){
   let h=imgOk(e.cover)?'<div class="cover"><img src="'+esc(e.cover)+'" alt=""><div class="cover-in">'+(imgOk(e.logo)?brandLogo(64,e.logo):'')+'<div style="min-width:0"><b>'+esc(e.nom)+'</b><span>Livraison de colis et moto-taxi · '+zl+'</span></div></div></div>'
     :'<div class="hero"><div class="logo">'+brandLogo(72,e.logo)+'<div class="n" style="font-family:var(--display);font-weight:800;font-size:21px">'+esc(e.nom)+'</div></div><h1>On livre votre colis.<br>On vous transporte.</h1><p>À moto, à '+zl+'. Paiement espèces, Wave ou Orange Money.</p></div>';
   if(!e.actif)return app.innerHTML=h+'<div class="note" style="margin-top:14px">Le service en ligne est fermé pour le moment. Appelez ou écrivez sur WhatsApp au <b class="num">'+telFmt(e.tel)+'</b>.</div>';
-  if(PV.done){const m=MINE.find(x=>x.id===PV.done);if(m)h+='<div class="card stack" style="margin-top:14px;border-color:var(--go)"><h2>Demande envoyée ✅</h2><div>Votre numéro de course : <span class="num">N° '+esc(m.no)+'</span></div><div class="hint">Un livreur va vous appeler. Suivez la course plus bas.</div>'+
+  if(PV.done){const m=MINE.find(x=>x.id===PV.done);if(m)h+='<div class="card stack" style="margin-top:14px;border-color:var(--go)"><h2>Demande envoyée ✅</h2><div>Votre numéro de course : <span class="num">N° '+esc(m.no)+'</span></div><div class="hint">Un livreur va vous appeler. Suivez la course plus bas.</div>'+(pubPayOpts().length?'<div class="hint">💳 Vous pouvez aussi payer d\'avance par '+pubPayOpts().map(x=>x[1]).join(' ou ')+' dans « Mes courses », dès que le prix est fixé.</div>':'')+
     (m.cl?'<div class="small">🔐 Code de livraison : <b class="code">'+esc(m.cl)+'</b>. Envoyez-le à celui qui reçoit : il le donne au livreur seulement quand il a le colis.</div>':'')+
     '<a class="b b-go" target="_blank" rel="noopener" href="'+waShare(pubDestText(m))+'">💬 Envoyer le lien à celui qui reçoit</a><button class="b b-line" data-a="pNew">Faire une autre demande</button></div>';}
   h+='<h3>Je suis à</h3><div class="chips" role="radiogroup">'+zs.map(z=>'<label><input type="radio" name="p_city" value="'+esc(z)+'"'+(PV.city===z?' checked':'')+'><span>📍 '+esc(z)+'</span></label>').join('')+'</div>';
@@ -1016,6 +1023,7 @@ function posBlock(){return '<div class="card stack" style="background:var(--sunk
   '<button type="button" class="b b-line" data-a="posGet"'+(PV.posBusy?' disabled':'')+'>'+(PV.posBusy?'<span class="spin"></span> Recherche…':'📍 Envoyer ma position (où on me prend)')+'</button>'+(GEOERR?geoHelp():'<div class="hint">Le livreur arrive directement chez vous, sans chercher.</div>'))+'</div>';}
 function pubVocal(){
   if(PV.vocal)return '<div class="card stack" style="margin-top:12px"><h2>Votre vocal</h2><audio controls src="'+esc(PV.vocal.url)+'" style="width:100%"></audio>'+posBlock()+
+    grp('Qui paie la livraison ?',chips('v_paie',[['exp','Moi'],['dest','Celui qui reçoit']],PV.f.v_paie||'exp'))+grp('Paiement',chips('v_mode',[['cash','Espèces'],['wave','Wave'],['om','Orange Money']],PV.f.v_mode||'cash'))+
     '<label class="f">Mon numéro (pour vous rappeler)<input id="v_tel" inputmode="tel" placeholder="77 000 00 00" value="'+(PV.f.v_tel!=null?pf('v_tel'):esc(lsGet('tl-montel','')))+'" style="font-size:22px;font-family:var(--display);font-weight:800;letter-spacing:.05em"></label>'+
     '<div class="row"><button class="b b-line" data-a="vAgain">🔁 Recommencer</button><button class="b b-go b-big" data-a="vSend"'+(PV.sending?' disabled':'')+'>'+(PV.sending?'<span class="spin"></span> Envoi…':'Envoyer le vocal')+'</button></div></div>';
   return '<div class="card stack" style="margin-top:12px;text-align:center"><div>Dites où on prend, où on livre, et ce qu\'on transporte.</div>'+
@@ -1034,6 +1042,24 @@ function pubForm(){const t=lsGet('tl-montel','');
     '<button class="b b-go b-big" type="submit"'+(PV.sending?' disabled':'')+'>'+(PV.sending?'<span class="spin"></span> Envoi…':'Envoyer ma demande')+'</button></form>';
 }
 function pubDestText(m){return 'Bonjour, je vous envoie un colis avec '+((PUB&&PUB.nom)||'Teranga Livraison')+' (course N° '+m.no+').'+(m.cl?' Votre code de livraison : '+m.cl+'. Donnez-le au livreur seulement quand vous avez le colis.':'')+' Touchez ce lien pour envoyer votre position au livreur : '+SITE+'commande.html?c='+CCODE+'&d='+m.id+'&k='+m.dtk;}
+// ----- payer d'avance par Wave / Orange Money, depuis « Mes courses » -----
+function pubPayOpts(){const e=PUB||{};return [].concat(e.wave||imgOk(e.qrWave)?[['wave','Wave']]:[]).concat(e.om||imgOk(e.qrOm)?[['om','Orange Money']]:[]);}
+function mineRefresh(){const b=$('pubMine');if(b)b.innerHTML=mineHtml();}
+function pubPayBox(md,amt){const e=PUB||{},w=md==='wave',qr=w?e.qrWave:e.qrOm,n=w?e.wave:e.om,nm=w?'Wave':'Orange Money';
+  return '<div class="paybox"><div class="pb-t">Envoyez <b>'+F(amt)+'</b> par '+nm+'</div>'+
+    (n?'<div class="pb-n">au <b class="num">'+telFmt(n)+'</b>'+(e.nom?'<br><span class="muted">'+esc(e.nom)+'</span>':'')+'</div><button type="button" class="b b-line b-sm" data-a="copyNum" data-v="'+esc(tel9(n))+'">Copier le numéro</button>':'')+
+    (imgOk(qr)?(n?'<div class="hint">Ou scannez ce code avec l\'app '+nm+' :</div>':'<div class="hint">Scannez ce code avec l\'app '+nm+' :</div>')+'<img class="qr" src="'+esc(qr)+'" alt="Code QR '+nm+'">':'')+
+    '<div class="hint">Après le paiement, touchez « J\'ai payé ». La société vérifie, et le livreur ne vous demandera rien pour la livraison.</div></div>';}
+function payPubHtml(m,s){if(!s||!PUB)return '';const nm=x=>x==='om'?'Orange Money':'Wave';
+  if(s.payRec==='wave'||s.payRec==='om')return '<div class="small" style="color:var(--go)">✅ '+(s.payPre?'Vous avez payé ':'Payé ')+(+s.prix?F(s.prix)+' ':'')+'par '+nm(s.payRec)+(s.payRecOk?' · reçu par la société ✓':' · la société vérifie')+'</div>';
+  if(s.payRec==='non')return '<div class="small" style="color:var(--bad)">La société n\'a pas reçu votre paiement par Wave / Orange Money. Appelez-la au <b class="num">'+telFmt(PUB.tel)+'</b>.</div>';
+  if(s.payRec||s.paie==='dest'||!['nouvelle','prise','recuperee'].includes(s.statut))return '';
+  const o=pubPayOpts();if(!o.length)return '';
+  if(!(+s.prix))return '<div class="hint">💳 Quand la société aura fixé le prix, vous pourrez payer ici par '+o.map(x=>x[1]).join(' ou ')+'.</div>';
+  if(PV.payOpen!==m.id)return '<button class="b b-line" data-a="payPre" data-id="'+esc(m.id)+'">💳 Payer '+F(s.prix)+' maintenant · '+o.map(x=>x[1]).join(' / ')+'</button>';
+  const md=o.some(x=>x[0]===PV.f.pp_mode)?PV.f.pp_mode:o[0][0];
+  return '<div class="stack" style="gap:10px">'+(o.length>1?grp('Je paie avec',chips('pp_mode',o,md)):'')+pubPayBox(md,+s.prix)+
+    '<button class="b b-go b-big" data-a="payPreOk" data-id="'+esc(m.id)+'">✅ J\'ai payé '+F(s.prix)+'</button><button class="b b-line b-sm" data-a="payPreX">Plus tard</button></div>';}
 function suiviCard(m){
   const s=SUIVI[m.id]||m.last||{statut:'nouvelle',t:{cree:m.t},type:'colis'};const order=['nouvelle','prise','recuperee','livree'];const i=order.indexOf(s.statut);const T=s.t||{};
   if(s.statut==='annulee')return '<div class="card"><b>N° '+esc(m.no)+'</b> · <span class="pill p-annulee">Annulée</span></div>';
@@ -1041,7 +1067,7 @@ function suiviCard(m){
   return '<div class="card stack"><div class="c-head"><span class="c-no">N° '+esc(m.no)+'</span><span class="c-meta">'+esc(s.zone||'')+(s.de?' · '+esc(s.de):'')+'</span></div><div class="steps">'+steps.map(([x,hh],k)=>'<div class="step'+(k<=i?' ok':'')+(k===i?' now':'')+'"><span class="d" aria-hidden="true"></span><div><b>'+x+'</b>'+(k<=i&&hh?' <span class="muted small">'+hh+'</span>':'')+'</div></div>').join('')+'</div>'+
     (s.livreur&&s.statut!=='livree'?'<div class="who"><span>🛵 '+esc(s.livreur.nom)+' · <span class="num" style="font-size:15px">'+telFmt(s.livreur.tel)+'</span></span><a class="b b-line b-sm" href="'+telLink(s.livreur.tel)+'">📞 Appeler</a></div>':'')+
     (+s.prix?'<div class="small">💵 Prix de la course : <b>'+F(s.prix)+'</b>'+(s.statut==='livree'&&PUB&&PUB.tel?' · <a href="'+waLink(PUB.tel,'Bonjour, pour ma course N° '+m.no+' le prix noté est '+F(s.prix)+', mais ce n\'est pas ce que j\'ai payé.')+'" target="_blank" rel="noopener">Pas le bon prix ?</a>':'')+'</div>':'')+
-    (m.cl&&s.statut!=='livree'?'<div class="small">🔐 Code de livraison : <b class="code">'+esc(m.cl)+'</b></div>':'')+'</div>';
+    (m.cl&&s.statut!=='livree'?'<div class="small">🔐 Code de livraison : <b class="code">'+esc(m.cl)+'</b></div>':'')+payPubHtml(m,SUIVI[m.id])+'</div>';
 }
 // enregistrement du vocal (débit bas pour un petit fichier)
 let MR=null,recTimer=null,recT0=0;
@@ -1194,7 +1220,13 @@ document.addEventListener('click',async e=>{
   if(a==='posDel'){PV.pos=null;renderKeepPub();return;}
   if(a==='vSend'){const tel=tel9(($('v_tel')||{}).value);if(tel.length<9){toast('Écrivez votre numéro (9 chiffres)');return;}
     const v=PV.vocal;const b64=String(v.url).split(',')[1]||'';if(b64.length>1350000){toast('Vocal trop long : recommencez plus court');return;}
-    pubSend({zone:PV.city,cli:{tel},vocal:{data:b64,mime:v.mime,dur:v.dur},depos:PV.pos||undefined});return;}
+    pubSend({zone:PV.city,cli:{tel},paie:PV.f.v_paie||'exp',mode:PV.f.v_mode||'cash',vocal:{data:b64,mime:v.mime,dur:v.dur},depos:PV.pos||undefined});return;}
+  if(a==='payPre'){PV.payOpen=id;mineRefresh();return;}
+  if(a==='payPreX'){PV.payOpen=null;mineRefresh();return;}
+  if(a==='payPreOk'){if(el.dataset.arm!=='1'){el.dataset.arm='1';el.textContent='Sûr ? Touchez encore : j\'ai bien envoyé l\'argent';return;}
+    const m=MINE.find(x=>x.id===id),o=pubPayOpts();if(!m||!o.length)return;const md=o.some(x=>x[0]===PV.f.pp_mode)?PV.f.pp_mode:o[0][0];el.disabled=true;
+    try{const s=await rpc('liv_paye',{p_code:CCODE,p_id:m.id,p_tk:m.tk,p_mode:md});if(s&&s.ok)SUIVI[m.id]=s;PV.payOpen=null;buzz();toast('Merci ! La société vérifie votre paiement.');}catch(err){toast(errMsg(err));}
+    mineRefresh();return;}
   if(a==='dPos'){DV.busy=true;render();getPos(async p=>{DV.busy=false;if(!p){render();return;}
     try{await rpc('liv_dest_pos',{p_code:CCODE,p_id:Q.get('d'),p_tk:Q.get('k'),p_lat:p.lat,p_lng:p.lng});DV.sent=true;toast('Position envoyée au livreur ✅');}catch(err){toast(errMsg(err));}render();});return;}
 });
@@ -1215,7 +1247,8 @@ document.addEventListener('change',e=>{
   if(t.name==='lv_pay'){updPay();return;}
   if((t.id==='e_qrw'||t.id==='e_qro')&&t.files&&t.files[0]){const k=t.id==='e_qrw'?'qrWave':'qrOm';readPhoto(t.files[0],u=>{put('set','ent',{[k]:u});render();toast('Code QR ajouté');uploadImgs();},900,.92);t.value='';return;}
   if(t.name==='p_city'){PV.city=t.value;renderKeepPub();return;}
-  if(t.name==='k_type'||t.name==='k_paie'||t.name==='k_mode'){PV.f[t.name]=t.value;return;}
+  if(t.name==='k_type'||t.name==='k_paie'||t.name==='k_mode'||t.name==='v_paie'||t.name==='v_mode'){PV.f[t.name]=t.value;return;}
+  if(t.name==='pp_mode'){PV.f.pp_mode=t.value;mineRefresh();return;}
 });
 document.addEventListener('input',e=>{const t=e.target;
   if(/^(k_de|k_a|k_tel|k_dest|k_march|v_tel)$/.test(t.id||'')){PV.f[t.id]=t.value;return;}
