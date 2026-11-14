@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="fr">
 <head><script>/* terangaapps.com : passe en https dès que le certificat est prêt */(function(){try{var l=location;if(l.protocol==="http:"&&/(^|\.)terangaapps\.com$/.test(l.hostname)){var u="https://"+l.host+l.pathname+l.search+l.hash;fetch("https://"+l.host+"/CNAME",{mode:"no-cors",cache:"no-store"}).then(function(){l.replace(u)}).catch(function(){})}}catch(e){}})();</script>
-<meta charset="utf-8">
+<meta charset="utf-8"><script>/* Essai gratuit : 1 mois pour toute inscription jusqu'au 31/01/2027 (offre de lancement), puis 14 jours. Même règle sur le serveur (Supabase seck_essai_fin). */window.ESSAI_LANCEMENT=Date.now()<Date.UTC(2027,1,1);window.ESSAI_TXT=ESSAI_LANCEMENT?'1 mois gratuit':'14 jours gratuits';window.ESSAI_TXT_LONG=ESSAI_LANCEMENT?"1 mois d'essai gratuit":"14 jours d'essai gratuit";window.ESSAI_IT=ESSAI_LANCEMENT?'1 mese gratis':'14 giorni gratis';window.ESSAI_JOURS=ESSAI_LANCEMENT?30:14;</script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Commander une livraison</title>
 <meta name="description" content="Envoyez un colis ou demandez une course : écrivez ou laissez un vocal, un livreur arrive.">
@@ -905,7 +905,7 @@ function livreSheet(c){
 
 // ----- Écrans d'entrée -----
 function renderStart(){
-  $('app').innerHTML='<div class="start"><div class="hero"><div class="logo">'+logo(72)+'<div class="n" style="font-family:var(--display);font-weight:800;font-size:21px">Teranga Livraison</div></div><h1>Vos motos, vos livreurs, vos courses.<br>Tout dans une app.</h1><p>Demandes des clients par vocal ou par lien, livreurs avec un code, caisse du jour et argent des vendeurs. 7 jours gratuits.</p></div>'+
+  $('app').innerHTML='<div class="start"><div class="hero"><div class="logo">'+logo(72)+'<div class="n" style="font-family:var(--display);font-weight:800;font-size:21px">Teranga Livraison</div></div><h1>Vos motos, vos livreurs, vos courses.<br>Tout dans une app.</h1><p>Demandes des clients par vocal ou par lien, livreurs avec un code, caisse du jour et argent des vendeurs. '+ESSAI_TXT+'.</p></div>'+
     '<button class="b b-sun b-big" data-a="goAuth" data-v="su">Je suis le patron : créer mon compte</button>'+
     '<button class="b b-line b-big" data-a="goAuth" data-v="in">J\'ai déjà un compte : entrer</button>'+
     '<button class="b b-go b-big" data-a="goMLogin">🛵 Je suis livreur ou capo de zone</button>'+
@@ -919,7 +919,7 @@ function renderAuth(){const a=V.auth,su=a.su;
     '<label class="f">Votre numéro<input id="au_tel" inputmode="tel" autocomplete="username" value="'+esc(a.tel)+'" placeholder="77 000 00 00" required></label>'+
     '<label class="f">Mot de passe<input id="au_pw" type="password" autocomplete="'+(su?'new-password':'current-password')+'" required></label>'+
     (su?'<label class="f">Répétez le mot de passe<input id="au_pw2" type="password" autocomplete="new-password" required></label>':'')+
-    '<div class="err" id="au_err"></div><button class="b b-sun b-big" type="submit" id="au_btn">'+(su?'Créer mon compte · 7 jours gratuits':'Entrer')+'</button></form>'+
+    '<div class="err" id="au_err"></div><button class="b b-sun b-big" type="submit" id="au_btn">'+(su?'Créer mon compte · '+ESSAI_TXT:'Entrer')+'</button></form>'+
     '<button class="b b-line" data-a="toStart">‹ Retour</button>'+(su?'':'<div class="hint" style="text-align:center">Mot de passe oublié ? Écrivez à Seck Apps : '+telFmt(SUPPORT)+'</div>')+'</div>';
 }
 function renderMLogin(){const m=V.mlog;if(!m.code)m.code=Q.get('livreur')||lsGet('tl-lastcode','')||'';
@@ -1272,7 +1272,7 @@ document.addEventListener('submit',async e=>{
         if(r.error)throw r.error;if(!r.data.session)throw new Error('Compte créé mais pas encore actif : écrivez à Seck Apps');USER=r.data.session.user;
         if(su){ACC=await rpc('liv_inscription',{p_nom:a.nom.trim(),p_ville:a.ville.trim()});lsSet(K('acc'),ACC);}
         V.auth={su:false,nom:'',ville:'',tel:'',pw:'',pw2:''};startCapo();}
-      catch(err){b.disabled=false;b.textContent=su?'Créer mon compte · 7 jours gratuits':'Entrer';say(errMsg(err));}});return;}
+      catch(err){b.disabled=false;b.textContent=su?'Créer mon compte · '+ESSAI_TXT:'Entrer';say(errMsg(err));}});return;}
   if(f.id==='fMLogin'){const m=V.mlog;m.code=codeOf(Q.get('livreur')||fv('ml_code'));m.tel=fv('ml_tel');const pin=digits(fv('ml_pin')),say=t=>{$('ml_err').textContent=t;};
     if(!m.code)return say('Écrivez le code de la société');if(tel9(m.tel).length<9)return say('Numéro invalide');if(pin.length<4)return say('Code : 4 chiffres');
     const b=$('ml_btn');b.disabled=true;b.innerHTML='<span class="spin"></span>';
