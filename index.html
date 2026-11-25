@@ -256,6 +256,53 @@ html,body{min-height:100%}
 .paybox img.qr{width:min(78vw,300px);height:auto;max-width:100%;background:#fff;border-radius:12px;padding:8px}
 .paybox .pb-n{font-size:17px;color:var(--ink)}.paybox .pb-n .num{font-size:22px}
 
+/* étiquettes des colis : une feuille de papier à l'écran, 4 par feuille A4 à l'impression */
+.labs{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 2px 14px;margin-bottom:6px}
+.labs>.labw{flex:0 0 min(86%,340px);scroll-snap-align:center}
+.labs>.labw:only-child{margin-inline:auto}
+.labw{container-type:inline-size}
+.lab{width:100%;aspect-ratio:100/140;background:#fff;color:#111;border:.9cqi solid #111;border-radius:2.5cqi;padding:4cqi;display:grid;grid-template-rows:auto auto auto 1fr auto auto auto;gap:2.4cqi;font-family:var(--body);line-height:1.1;box-shadow:0 8px 24px rgba(0,0,0,.16);overflow:hidden;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.lab small{display:block;font-size:3.5cqi;font-weight:800;text-transform:uppercase;color:#555;margin-bottom:.6cqi}
+.l-top{display:flex;align-items:center;gap:2cqi;min-width:0}
+.l-top svg,.l-top img{width:9cqi!important;height:9cqi!important;border-radius:2cqi;flex:none;object-fit:cover}
+.l-top b{font-family:var(--display);font-size:5.2cqi;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.l-top span{margin-left:auto;font-size:3.5cqi;font-weight:700;color:#333;text-align:right;white-space:nowrap}
+.l-id{display:flex;justify-content:space-between;align-items:stretch;gap:2cqi;border-block:.8cqi solid #111;padding-block:1.4cqi}
+.l-id b{font-family:var(--display);font-size:14cqi;font-weight:800;line-height:.95;white-space:nowrap}
+.l-n{background:#111;color:#fff;border-radius:1.6cqi;padding:1cqi 3cqi;font-family:var(--display);font-size:11cqi;font-weight:800;line-height:.95;text-align:center;display:grid;align-content:center;white-space:nowrap}
+.l-n small{color:#FFC21A;font-size:3.3cqi;margin:0}
+.l-mid{display:grid;grid-template-columns:44cqi minmax(0,1fr);gap:3.5cqi;align-items:start}
+.l-qr svg{width:100%;display:block}
+.l-a strong{font-family:var(--display);font-size:6.6cqi;font-weight:800;line-height:1.05;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.l-a em{font-style:normal;font-size:4cqi;color:#222;margin-top:1.4cqi;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.l-note{align-self:center;display:flex;gap:2cqi;align-items:flex-end;font-size:3.6cqi;font-weight:700;color:#777}
+.l-note i{flex:1;height:5cqi;border-bottom:.5cqi dotted #999}
+.l-to{align-self:end;min-width:0}
+.l-to strong{display:block;font-family:var(--display);font-size:7.4cqi;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.l-to span{font-size:6.4cqi;font-weight:800}
+.l-from{font-size:3.9cqi;color:#222;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.l-from small{display:inline;margin-right:1cqi}
+.l-pay{border:.8cqi solid #111;border-radius:1.6cqi;text-align:center;padding:1.4cqi;font-size:5.4cqi;font-weight:800;text-transform:uppercase}
+.l-pay.l-due{border-style:double;border-width:1.6cqi;background:#fff}
+#printRoot{display:none}
+@media print{
+  @page{size:A4;margin:5mm}
+  :root{padding:0!important} body{background:#fff!important} body::before{display:none!important}
+  body>*:not(#printRoot){display:none!important}
+  #printRoot{display:grid!important;grid-template-columns:repeat(2,100mm);grid-auto-rows:140mm}
+  #printRoot .labw{width:100mm;height:140mm;break-inside:avoid}
+  #printRoot .lab{height:100%;aspect-ratio:auto;border-radius:0;box-shadow:none}
+}
+/* colis qui attendent au dépôt, scanner des étiquettes */
+.age{align-self:flex-start;font-size:13px;font-weight:800;padding:3px 10px;border-radius:99px;background:var(--sunk);color:var(--ink)}
+.age.warn{background:var(--sun-soft)}.age.late{background:var(--bad);color:#fff}
+.scanbox{position:relative;border-radius:16px;overflow:hidden;background:#000;aspect-ratio:1/1;max-height:58vh}
+.scanbox video{width:100%;height:100%;object-fit:cover;display:block}
+.scanbox i{position:absolute;inset:18%;border:4px solid var(--sun);border-radius:18px;box-shadow:0 0 0 999px rgba(0,0,0,.35)}
+.flash{animation:fl 1.8s ease-out 1}
+@keyframes fl{0%,45%{box-shadow:0 0 0 4px var(--sun)}100%{box-shadow:0 0 0 0 transparent}}
+@media (prefers-reduced-motion:reduce){.flash{animation:none;outline:3px solid var(--sun)}}
+
 </style>
 </head>
 <body>
@@ -263,6 +310,7 @@ html,body{min-height:100%}
 <main class="gut"><div class="wrap" id="app"><div style="padding:60px 0;text-align:center"><span class="spin"></span></div></div></main>
 <div id="tabs"></div>
 <div id="sheetRoot"></div>
+<div id="printRoot"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 /* ======================================================================
@@ -408,7 +456,7 @@ async function refreshAcc(){try{ACC=await rpc('liv_compte');if(ACC&&!ACC.ok)ACC=
 async function startCapo(){
   MODE='capo';loadS();ACC=lsGet(K('acc'),null);V.tab=V.tab||'courses';render();
   await refreshAcc();if(MODE!=='capo')return;
-  await flush();await pull(true);render();uploadImgs();
+  await flush();await pull(true);render();uploadImgs();openPending();
   startPolling(()=>{flush();pull();},10000);pushCheck();
 }
 function startDemo(){MODE='demo';USER=null;S=lsGet('tl-demo',null)||demoSeed();ACC={ok:true,actif:true,formule:'premium',code:'demo',fin:today(),limites:{livreurs:1000,zones:100},demo:true};V.tab='courses';render();}
@@ -460,7 +508,7 @@ async function replayMQ(){if(MODE!=='membre'||!SB)return;while(MQ.length&&naviga
     try{const v=await mcall(q.act,q.id,q.arg);MQ.shift();lsSet('tl-mq',MQ);if(v&&v.ok)setMV(v);}
     catch(e){if(isNet(e))break;MQ.shift();lsSet('tl-mq',MQ);toast('Non enregistré : '+errMsg(e));}}
   netBar();renderKeep();}
-function startMembre(){MODE='membre';vueToS();render();if(!SB)return;replayMQ().then(()=>mRefresh(false));
+function startMembre(){MODE='membre';vueToS();render();if(!SB){openPending();return;}replayMQ().then(()=>mRefresh(false)).then(openPending);
   clearInterval(MPOLL);MPOLL=setInterval(()=>{if(document.visibilityState==='visible')replayMQ().then(()=>mRefresh(true));},12000);pushCheck();}
 
 // ===== Actions du capo et du capo de zone (mêmes écrans) =====
@@ -468,13 +516,18 @@ function courseNeedsCode(march){const cv=S.ent.codeLiv||'vendeur';return cv==='t
 async function doNewCourse(o,lid){
   if(isZoneMgr()){const a=Object.assign({},o,{lid:lid||''});const ok=await mdo('creer','',a,lid?'Course envoyée à '+(lv(lid)||{}).nom:'Course enregistrée');return ok;}
   const id=uid(),now=Date.now();
-  const c=Object.assign({id,src:'tel',type:'colis',cli:{nom:'',tel:''},de:'',a:'',dest:{nom:'',tel:''},note:'',prix:0,paie:'exp',mode:'cash',march:0,statut:'nouvelle',lid:'',rendu:false},o,
-    {t:{cree:now},ctk:rnd(16),dtk:rnd(16),cl:courseNeedsCode(o.march)?pin4():'',par:'capo'});
+  // le code suit les réglages, mais le capo peut l'enlever pour un petit colis : alors le livreur doit prendre une photo
+  const rule=courseNeedsCode(o.march),want=o.code===undefined?rule:!!o.code,o2=Object.assign({},o);delete o2.code;
+  const c=Object.assign({id,src:'tel',type:'colis',cli:{nom:'',tel:''},de:'',a:'',dest:{nom:'',tel:''},note:'',prix:0,paie:'exp',mode:'cash',march:0,statut:'nouvelle',lid:'',rendu:false},o2,
+    {t:{cree:now},ctk:rnd(16),dtk:rnd(16),cl:want?pin4():'',par:'capo'},rule&&!want?{sansCode:true}:{});
   if(MODE==='demo')c.no=(Math.max(1000,...L('courses').map(x=>+x.no||0))+1);
   if(lid){c.lid=lid;c.statut='prise';c.t.prise=now;}
   put('courses',id,c);toast(lid?'Course envoyée à '+(lv(lid)||{}).nom:'Course enregistrée');return true;}
 function doEditCourse(id,o){if(isZoneMgr())return mdo('modifier',id,o,'Course modifiée');const c=crs(id);if(!c)return;
-  const p=Object.assign({},o);if(o.march!==undefined&&!c.cl&&courseNeedsCode(o.march))p.cl=pin4();put('courses',id,p);toast('Course modifiée');}
+  const p=Object.assign({},o);delete p.code;const open=['nouvelle','prise','recuperee'].includes(c.statut);
+  if(o.code!==undefined&&open){if(o.code&&!c.cl){p.cl=pin4();p.sansCode=false;}else if(!o.code&&c.cl){p.cl='';p.sansCode=true;}}
+  else if(o.march!==undefined&&!c.cl&&courseNeedsCode(o.march))p.cl=pin4();
+  put('courses',id,p);toast('Course modifiée');}
 function doAssign(id,lid){const c=crs(id),l=lv(lid);if(!c||!l)return;
   if(isZoneMgr())return mdo('envoyer',id,{lid},'Envoyée à '+l.nom);
   const p={lid,par:'capo'};if(c.statut==='nouvelle'){p.statut='prise';p.t=Object.assign({},c.t,{prise:Date.now()});}put('courses',id,p);toast('Course N° '+(c.no||'')+' envoyée à '+l.nom);}
@@ -546,8 +599,8 @@ function grp(title,inner){return '<div class="f"><span>'+title+'</span>'+inner+'
 function chips(name,opts,sel){return '<div class="chips" role="radiogroup">'+opts.map(([v,t])=>'<label><input type="radio" name="'+name+'" value="'+esc(v)+'"'+(String(v)===String(sel)?' checked':'')+'><span>'+t+'</span></label>').join('')+'</div>';}
 function fv(n){const r=document.querySelector('[name="'+n+'"]:checked');if(r)return r.value;const el=$(n);return el?el.value:'';}
 function zoneOptions(sel){return zones().map(z=>'<option'+(z===sel?' selected':'')+'>'+esc(z)+'</option>').join('');}
-function openSheet(title,html){$('sheetRoot').innerHTML='<div class="sheet-bg" data-a="closeBg"><div class="sheet gut" role="dialog" aria-modal="true" aria-label="'+esc(title)+'"><div class="wrap"><div class="sheet-head"><h2>'+esc(title)+'</h2><button class="b b-line b-sm" data-a="close">Fermer</button></div>'+html+'</div></div></div>';}
-function closeSheet(){$('sheetRoot').innerHTML='';}
+function openSheet(title,html){stopScan();$('sheetRoot').innerHTML='<div class="sheet-bg" data-a="closeBg"><div class="sheet gut" role="dialog" aria-modal="true" aria-label="'+esc(title)+'"><div class="wrap"><div class="sheet-head"><h2>'+esc(title)+'</h2><button class="b b-line b-sm" data-a="close">Fermer</button></div>'+html+'</div></div></div>';}
+function closeSheet(){stopScan();$('sheetRoot').innerHTML='';}
 let RK=0;function renderKeep(){if($('sheetRoot').innerHTML)return;const y=window.scrollY;render();window.scrollTo(0,y);}
 
 function render(){
@@ -660,6 +713,7 @@ function soloActions(c,open){let h='';const aRec=c.paie!=='dest'&&!c.payRec&&(c.
   if(c.statut==='livree'&&+c.march&&!c.rendu)h+='<button class="b b-go" data-a="rendu" data-id="'+c.id+'">Argent rendu au vendeur ✓</button>';
   h+='<div class="row">';
   if(c.statut!=='annulee')h+='<button class="b b-line b-sm" data-a="edit" data-id="'+c.id+'">✏️ Modifier</button><button class="b b-line b-sm" data-a="recu" data-id="'+c.id+'">🧾 Reçu</button>';
+  if(c.statut!=='annulee'&&c.type!=='personne')h+='<button class="b b-line b-sm" data-a="lab" data-id="'+c.id+'">🏷️ Étiquette</button>';
   if(open&&c.dest&&c.dest.tel&&c.dtk)h+='<button class="b b-line b-sm" data-a="destLink" data-id="'+c.id+'">📍 Lien position</button>';
   if(open)h+='<button class="b b-bad b-sm" data-a="cancel" data-id="'+c.id+'">Annuler</button>';
   return h+'</div>';}
@@ -669,13 +723,15 @@ function soloLivreSheet(c){
     (+c.prix?'':prixBlock(c,true))+payBlock(c)+'<button class="b b-done b-big" type="submit">✅ Confirmer la livraison</button></form>');}
 function courseCard(c,ctx){
   const l=lv(c.lid);const st=ST[c.statut]||ST.nouvelle;const open=c.statut!=='annulee'&&c.statut!=='livree';
-  let h='<article class="course s-'+c.statut+'"><div class="c-head"><span class="c-no">N° '+(c.no||'…')+'</span><span class="c-meta">'+(c.vocal?'🎤 Vocal':SRC[c.src]||'')+' · '+hhmm(c.t&&c.t.cree)+(zones().length>1&&!V.zf?' · '+esc(c.zone):'')+'</span><span class="pill '+st.cls+'">'+st.t+'</span></div>';
-  h+='<div style="font-weight:800">'+(c.type==='personne'?'🛵 Transport de personne':'📦 Colis')+'</div>'+routeHtml(c)+vocalHtml(c)+moneyHtml(c,ctx!=='capo')+contactHtml(c,open);
+  let h='<article class="course s-'+c.statut+'" id="crs-'+esc(c.id)+'"><div class="c-head"><span class="c-no">N° '+(c.no||'…')+'</span><span class="c-meta">'+(c.vocal?'🎤 Vocal':SRC[c.src]||'')+' · '+hhmm(c.t&&c.t.cree)+(zones().length>1&&!V.zf?' · '+esc(c.zone):'')+'</span><span class="pill '+st.cls+'">'+st.t+'</span></div>';
+  if(ctx==='capo'&&isDepot(c)){const g=depotAge(c);h+='<span class="age '+g.cls+'">'+g.t+'</span>';}
+  h+='<div style="font-weight:800">'+(c.type==='personne'?'🛵 Transport de personne':'📦 Colis'+(nbOf(c)>1?' · '+nbOf(c)+' colis':''))+'</div>'+routeHtml(c)+vocalHtml(c)+moneyHtml(c,ctx!=='capo')+contactHtml(c,open);
   if(ctx==='capo'&&solo())return h+soloActions(c,open)+'</article>';
   if(ctx==='capo'){
     if(c.prixLiv)h+=prixLivHtml(c);
     h+=payLine(c,true);
     if(c.cl&&open)h+='<div class="small">🔐 Code de livraison : <b class="code">'+esc(c.cl)+'</b> <span class="muted">(celui qui reçoit le donne au livreur)</span></div>';
+    else if(c.sansCode&&open)h+='<div class="small">📷 Sans code : le livreur prend une photo du colis livré</div>';
     if(l)h+='<div class="who"><span>🛵 <b>'+esc(l.nom)+'</b>'+(c.statut==='livree'?' · livré à '+hhmm(c.t.livree):c.statut==='recuperee'?' · récupéré à '+hhmm(c.t.recup):c.statut==='prise'?' · parti à '+hhmm(c.t.prise):'')+'</span>'+(c.photo?'<button class="b b-line b-sm" data-a="photo" data-id="'+c.id+'">📷 Photo</button>':'')+'</div>';
     h+='<div class="row">';
     if(c.statut==='nouvelle')h+='<button class="b b-sun" data-a="assign" data-id="'+c.id+'">🛵 Envoyer à un livreur</button>';
@@ -683,6 +739,7 @@ function courseCard(c,ctx){
     if(c.statut==='livree'&&+c.march&&!c.rendu)h+='<button class="b b-go" data-a="rendu" data-id="'+c.id+'">Argent rendu au vendeur ✓</button>';
     h+='</div><div class="row">';
     if(c.statut!=='annulee')h+='<button class="b b-line b-sm" data-a="edit" data-id="'+c.id+'">✏️ Modifier</button><button class="b b-line b-sm" data-a="recu" data-id="'+c.id+'">🧾 Reçu</button>';
+    if(c.statut!=='annulee'&&c.type!=='personne')h+='<button class="b b-line b-sm" data-a="lab" data-id="'+c.id+'">🏷️ Étiquette</button>';
     if(open&&c.dest&&c.dest.tel&&c.dtk)h+='<button class="b b-line b-sm" data-a="destLink" data-id="'+c.id+'">📍 Lien position</button>';
     if(actif(c))h+='<button class="b b-line b-sm" data-a="stepCapo" data-id="'+c.id+'">'+(c.statut==='prise'?'Marquer récupéré':'Marquer livré')+'</button>';
     if(open)h+='<button class="b b-bad b-sm" data-a="cancel" data-id="'+c.id+'">Annuler</button>';
@@ -694,6 +751,7 @@ function courseCard(c,ctx){
     const q=c.statut==='prise'?c.de:c.a,pos=c.statut==='prise'?c.depos:c.apos;
     if(q||posOk(pos))h+='<a class="b b-line" href="'+mapLink(q,c.zone,pos)+'" target="_blank" rel="noopener">🗺️ Itinéraire'+(posOk(pos)?' (position exacte)':' vers « '+esc(q)+' »')+'</a>';
     const aRec=c.paie!=='dest'&&!c.payRec&&(c.mode==='cash'||recSheetOk(c))?+c.prix||0:0,aLiv=(c.mode==='cash'&&c.paie==='dest'?+c.prix||0:0)+(+c.march||0);
+    if(c.codeReq)h+='<div class="small">🔐 Demandez le code à celui qui reçoit</div>';else if(c.sansCode)h+='<div class="small">📷 Photo du colis obligatoire à la livraison</div>';
     if(c.statut==='prise')h+='<button class="b b-pick b-big" data-a="mstep" data-v="recup" data-id="'+c.id+'">📦 RÉCUPÉRÉ'+(aRec>0?' · j\'encaisse '+F(aRec):'')+'</button>';
     if(c.statut==='recuperee')h+='<button class="b b-done b-big" data-a="mlivre" data-id="'+c.id+'">✅ LIVRÉ'+(aLiv>0?' · j\'encaisse '+F(aLiv):'')+'</button>';
   }
@@ -704,26 +762,31 @@ function courseCard(c,ctx){
 function capoCourses(app){
   const cs=L('courses').filter(inZone);
   const nouv=cs.filter(c=>c.statut==='nouvelle'),enc=cs.filter(actif),liv=cs.filter(c=>c.statut==='livree'&&dayOf(c.t.livree)===today());
-  const FL=[['actives','À faire',nouv.length+enc.length],['nouvelles','Nouvelles',nouv.length],['livrees',"Livrées aujourd'hui",liv.length],['toutes','Toutes',cs.length]];
-  let list=V.cf==='nouvelles'?nouv:V.cf==='livrees'?liv:V.cf==='toutes'?cs:nouv.concat(enc);
+  const dep=cs.filter(isDepot).sort((a,b)=>(a.t.cree||0)-(b.t.cree||0));   // au dépôt : le plus ancien en premier
+  const FL=[['actives','À faire',nouv.length+enc.length]].concat(dep.length||V.cf==='depot'?[['depot','🏪 Au dépôt',dep.length]]:[],[['nouvelles','Nouvelles',nouv.length],['livrees',"Livrées aujourd'hui",liv.length],['toutes','Toutes',cs.length]]);
+  let list=V.cf==='nouvelles'?nouv:V.cf==='livrees'?liv:V.cf==='toutes'?cs:V.cf==='depot'?dep:nouv.concat(enc);
   const ord={nouvelle:0,prise:1,recuperee:2,livree:3,annulee:4};
-  list=list.slice().sort((a,b)=>ord[a.statut]-ord[b.statut]||(b.t.cree||0)-(a.t.cree||0));
+  if(V.cf!=='depot')list=list.slice().sort((a,b)=>ord[a.statut]-ord[b.statut]||(b.t.cree||0)-(a.t.cree||0));
   if(V.cf==='toutes')list=list.slice(0,150);
   const dispo=livreurs().filter(l=>l.dispo&&inZone(l)).length;
   app.innerHTML=accBanner()+'<div class="tiles"><div class="tile"><div class="k">Nouvelles</div><div class="v">'+nouv.length+'</div></div><div class="tile"><div class="k">En route</div><div class="v">'+enc.length+'</div></div>'+(solo()?'<div class="tile"><div class="k">Livrées aujourd\'hui</div><div class="v">'+liv.length+'</div></div>':'<div class="tile"><div class="k">Livreurs dispo</div><div class="v">'+dispo+'</div></div>')+'</div>'+
-    '<div style="margin-top:12px"><button class="b b-sun b-big" data-a="new">＋ Nouvelle course</button></div>'+
+    '<div class="row" style="margin-top:12px"><button class="b b-sun b-big" data-a="new" style="flex:2 1 190px">＋ Nouvelle course</button><button class="b b-line b-big" data-a="scan" style="flex:1 1 120px">📷 Scanner</button></div>'+
     '<div class="filters" role="group" aria-label="Filtrer">'+FL.map(([k,x,n])=>'<button data-a="cf" data-v="'+k+'" aria-pressed="'+(V.cf===k)+'">'+x+' · '+n+'</button>').join('')+'</div>'+
-    '<div class="list">'+(list.length?list.map(c=>courseCard(c,'capo')).join(''):'<div class="empty">Aucune course ici pour le moment.<br>Touchez « Nouvelle course » quand un client appelle ou passe au dépôt. Les demandes du lien clients arrivent ici toutes seules.</div>')+'</div>';
+    '<div class="list">'+(list.length?list.map(c=>courseCard(c,'capo')).join(''):V.cf==='depot'?'<div class="empty">Aucun colis n\'attend au dépôt.</div>':'<div class="empty">Aucune course ici pour le moment.<br>Touchez « Nouvelle course » quand un client appelle ou passe au dépôt. Les demandes du lien clients arrivent ici toutes seules.</div>')+'</div>';
 }
 function courseForm(c){
   const isNew=!c;c=c||{zone:isZoneMgr()?MV.me.zone:(V.zf||zones()[0]),src:'tel',type:'colis',cli:{nom:'',tel:''},de:'',a:'',dest:{nom:'',tel:''},note:'',prix:'',paie:'exp',mode:'cash',march:''};
+  const codeOn=isNew?courseNeedsCode(c.march):!!c.cl,closed=!isNew&&!['nouvelle','prise','recuperee'].includes(c.statut);
+  const colisW='<div id="f_colisw" class="stack"'+(c.type==='personne'?' hidden':'')+'><div class="grid2"><label class="f">Nombre de colis<input id="f_nb" inputmode="numeric" value="'+esc(c.nb||1)+'"></label>'+
+    '<div class="f"><span>Code de livraison</span><label class="sw card" style="padding:11px 12px;color:var(--ink)"><span>🔐 Demander</span><input type="checkbox" id="f_code"'+(codeOn?' checked':'')+(closed?' disabled':'')+(!isNew&&c.cl?' data-had="1"':'')+' style="width:26px;height:26px"></label></div></div>'+
+    '<div class="hint" id="f_codeh">'+codeHint(codeOn,isNew?courseNeedsCode(c.march):!!c.cl)+'</div></div>';
   const tar=(S.ent.tarifs||[]).filter(t=>!isZoneMgr()||t.z===MV.me.zone).map(t=>'<option value="'+(+t.prix)+'">'+esc(t.z)+' · '+esc(t.lieu)+' — '+F(t.prix)+'</option>').join('');
   let to='';
   if(isNew&&!solo()){const ls=livreurs().filter(l=>!isZoneMgr()||l.zone===MV.me.zone);
     to='<label class="f">Qui fait la course ?<select id="f_to">'+(libreOk()?'<option value="">Le premier livreur disponible</option>':'<option value="">À envoyer plus tard</option>')+ls.map(l=>'<option value="'+esc(l.id)+'">'+esc(l.nom)+' · '+esc(l.zone)+(l.dispo?' · disponible':' · occupé')+'</option>').join('')+'</select></label>';}
   return '<form id="fCourse" class="stack" data-id="'+(isNew?'':esc(c.id))+'">'+
     (isNew?grp('La demande arrive comment ?',chips('f_src',[['tel','📞 Téléphone / WhatsApp'],['boutique','🏪 Au dépôt']],c.src)):'')+
-    '<div class="grid2">'+(isZoneMgr()?'<div class="f"><span>Zone</span><b style="padding:12px 0;color:var(--ink)">'+esc(c.zone)+'</b></div>':'<label class="f">Zone<select id="f_zone">'+zoneOptions(c.zone)+'</select></label>')+grp('Type',chips('f_type',[['colis','📦 Colis'],['personne','🛵 Personne']],c.type))+'</div>'+
+    '<div class="grid2">'+(isZoneMgr()?'<div class="f"><span>Zone</span><b style="padding:12px 0;color:var(--ink)">'+esc(c.zone)+'</b></div>':'<label class="f">Zone<select id="f_zone">'+zoneOptions(c.zone)+'</select></label>')+grp('Type',chips('f_type',[['colis','📦 Colis'],['personne','🛵 Personne']],c.type))+'</div>'+colisW+
     '<div class="grid2"><label class="f">Téléphone du client<input id="f_clitel" inputmode="tel" value="'+esc(telFmt(c.cli&&c.cli.tel))+'" placeholder="77 000 00 00"></label><label class="f">Nom<input id="f_clinom" value="'+esc(c.cli&&c.cli.nom)+'" placeholder="Facultatif"></label></div>'+
     '<div class="hint" id="f_hint" hidden></div>'+
     '<label class="f">Où prendre ?<input id="f_de" value="'+esc(c.de)+'" placeholder="Quartier, repère"></label>'+
@@ -738,6 +801,7 @@ function courseForm(c){
     to+'<button class="b b-sun b-big" type="submit">'+(isNew?'Enregistrer la course':'Enregistrer')+'</button></form>';
 }
 function readCourseForm(){const o={type:fv('f_type')||'colis',cli:{nom:fv('f_clinom').trim(),tel:tel9(fv('f_clitel'))},de:fv('f_de').trim(),a:fv('f_a').trim(),dest:{nom:fv('f_destnom').trim(),tel:tel9(fv('f_desttel'))},prix:Math.round(num(fv('f_prix'))),paie:fv('f_paie')||'exp',mode:fv('f_mode')||'cash',march:Math.round(num(fv('f_march'))),note:fv('f_note').trim()};
+  if(o.type!=='personne'){o.nb=Math.max(1,Math.min(50,Math.round(num(fv('f_nb')))||1));const k=$('f_code');if(k&&!k.disabled)o.code=!!k.checked;}
   if($('f_zone'))o.zone=fv('f_zone');else if(isZoneMgr())o.zone=MV.me.zone;return o;}
 function clientHint(tel){const t=tel9(tel);if(t.length<9)return null;
   const cs=L('courses').filter(c=>c.cli&&tel9(c.cli.tel)===t).sort((a,b)=>(b.t.cree||0)-(a.t.cree||0));return cs[0]||null;}
@@ -878,6 +942,7 @@ function renderLivreur(){
   const libres=libreOk()?L('courses').filter(c=>c.statut==='nouvelle'&&c.zone===me.zone):[];
   const k=caisse(me,today());const p=me.paie||{t:'pct'};
   app.innerHTML='<button class="dispo '+(me.dispo?'on':'off')+'" data-a="dispo" aria-pressed="'+!!me.dispo+'"><span>'+(me.dispo?'Je suis disponible':'Je suis occupé')+'<small>'+(me.dispo?'Vous recevez les nouvelles courses':'Touchez pour recevoir des courses')+'</small></span><span class="knob" aria-hidden="true"></span></button>'+
+    '<button class="b b-line" data-a="scan" style="margin-top:12px">📷 Scanner une étiquette</button>'+
     '<h3>Mes courses · '+mine.length+'</h3><div class="list">'+(mine.length?mine.map(c=>courseCard(c,'mine')).join(''):'<div class="empty">Pas de course en cours.</div>')+'</div>'+
     (libreOk()?'<h3>Nouvelles courses à '+esc(me.zone)+' · '+libres.length+'</h3><div class="list">'+(!me.dispo?'<div class="empty">Mettez-vous « disponible » pour voir et prendre les courses.</div>':libres.length?libres.map(c=>courseCard(c,'libre')).join(''):'<div class="empty">Pas de nouvelle course. Vous recevrez un avis.</div>')+'</div>':'<div class="note blue" style="margin-top:14px">Le capo vous envoie les courses. Vous recevez un avis.</div>')+
     '<h3>Ma journée</h3><div class="card"><div class="ca-row"><span>Courses livrées</span><b>'+k.cs.length+'</b></div><div class="ca-row"><span>Total des livraisons</span><b>'+F(k.total)+'</b></div>'+(k.march?'<div class="ca-row"><span>Marchandise encaissée</span><b>'+F(k.march)+'</b></div>':'')+
@@ -894,12 +959,12 @@ function prixBlock(c,seul){const ts=(S.ent.tarifs||[]).filter(t=>t.z===c.zone&&+
     '<label class="f" id="lv_autrew" hidden>Prix (F)<input id="lv_prix" inputmode="numeric" placeholder="Ex : 1500"></label>'+
     (seul?'':'<div class="note">Le client voit ce prix sur son suivi, et le patron peut l\'appeler pour vérifier.</div>');}
 function livreSheet(c){
-  const need=!!c.codeReq,ph=!!(S.ent.photoLiv);
+  const need=!!c.codeReq,ph=!!(S.ent.photoLiv||c.sansCode);
   openSheet('Livrer N° '+(c.no||''),'<form id="fLivre" class="stack" data-id="'+esc(c.id)+'">'+
     (+c.march||(c.paie==='dest'&&+c.prix)?'<div class="cod">💰 À encaisser : '+F((c.paie==='dest'?+c.prix:0)+(+c.march||0))+(+c.march?' (dont '+F(c.march)+' pour le vendeur)':'')+'</div>':'')+
     (+c.prix?'':prixBlock(c))+payBlock(c)+
     (need?'<label class="f">Code de celui qui reçoit<input id="lv_code" class="pinput" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••" required></label><div class="hint">Demandez le code à la personne quand elle a le colis en main.</div>':'')+
-    '<div class="f"><span>'+(ph?'Photo du colis livré (obligatoire)':'Photo du colis livré (facultatif)')+'</span><label class="b b-line">📷 Prendre la photo<input id="lv_photo" type="file" accept="image/*" capture="environment" hidden></label></div><img id="lv_prev" class="photo-prev" alt="Photo du colis" hidden>'+
+    '<div class="f"><span>'+(c.sansCode?'Photo du colis livré (obligatoire : colis sans code)':ph?'Photo du colis livré (obligatoire)':'Photo du colis livré (facultatif)')+'</span><label class="b b-line">📷 Prendre la photo<input id="lv_photo" type="file" accept="image/*" capture="environment" hidden></label></div><img id="lv_prev" class="photo-prev" alt="Photo du colis" hidden>'+
     '<button class="b b-done b-big" type="submit">✅ Confirmer la livraison</button></form>');
 }
 
@@ -954,6 +1019,8 @@ function demoSeed(){
    C({no:1004,src:'lien',cli:{nom:'Boutique Awa (TikTok)',tel:'770000202'},de:'Keur Niang',a:'Ndamatou, rue 12',dest:{nom:'Mariama',tel:'780000203'},prix:1500,paie:'dest',march:15000,cl:'2741',statut:'livree',lid:'l2',t:{cree:at(9,10),prise:at(9,12),recup:at(9,40),livree:at(10,20)}}),
    C({no:1005,cli:{nom:'Khady',tel:'770000205'},de:'Darou Khoudoss',a:'Gare routière',mode:'om',statut:'recuperee',lid:'l1',t:{cree:at(11,5),prise:at(11,8),recup:at(11,25)}}),
    C({no:1006,src:'lien',cli:{nom:'',tel:'770000207'},prix:0,statut:'nouvelle',t:{cree:at(11,50)},depos:{lat:14.8556,lng:-15.8783}}),
+   C({no:1008,src:'boutique',cli:{nom:'Boutique Keur Awa',tel:'770000220'},de:'Au dépôt',a:'Ndamatou, près de la pharmacie',dest:{nom:'Mariama Fall',tel:'780000221'},nb:3,prix:1500,paie:'dest',cl:'5160',t:{cree:at(9,20)-2*864e5}}),
+   C({no:1009,src:'boutique',cli:{nom:'Ousmane',tel:'770000222'},de:'Au dépôt',a:'Darou Marnane, maison bleue',dest:{nom:'Khady',tel:'770000223'},sansCode:true,t:{cree:at(10,15)}}),
    C({no:1007,zone:'Louga',type:'personne',cli:{nom:'Aïda',tel:'770000208'},de:'Gare routière de Louga',a:'Artillerie',prix:500,statut:'nouvelle',t:{cree:at(12,5)}})].forEach(c=>s.courses[c.id]=c);
   s.depenses.d1={id:'d1',lid:'l1',zone:'Touba',date:today(),type:'carburant',montant:3000,note:'Plein',t:at(8,0)};
   return s;
@@ -1005,7 +1072,7 @@ function renderPublic(){
   if(!e.actif)return app.innerHTML=h+'<div class="note" style="margin-top:14px">Le service en ligne est fermé pour le moment. Appelez ou écrivez sur WhatsApp au <b class="num">'+telFmt(e.tel)+'</b>.</div>';
   if(PV.done){const m=MINE.find(x=>x.id===PV.done);if(m)h+='<div class="card stack" style="margin-top:14px;border-color:var(--go)"><h2>Demande envoyée ✅</h2><div>Votre numéro de course : <span class="num">N° '+esc(m.no)+'</span></div><div class="hint">Un livreur va vous appeler. Suivez la course plus bas.</div>'+(pubPayOpts().length?'<div class="hint">💳 Vous pouvez aussi payer d\'avance par '+pubPayOpts().map(x=>x[1]).join(' ou ')+' dans « Mes courses », dès que le prix est fixé.</div>':'')+
     (m.cl?'<div class="small">🔐 Code de livraison : <b class="code">'+esc(m.cl)+'</b>. Envoyez-le à celui qui reçoit : il le donne au livreur seulement quand il a le colis.</div>':'')+
-    '<a class="b b-go" target="_blank" rel="noopener" href="'+waShare(pubDestText(m))+'">💬 Envoyer le lien à celui qui reçoit</a><button class="b b-line" data-a="pNew">Faire une autre demande</button></div>';}
+    '<a class="b b-go" target="_blank" rel="noopener" href="'+waShare(pubDestText(m))+'">💬 Envoyer le lien à celui qui reçoit</a>'+(m.ty!=='personne'?'<button class="b b-line" data-a="pLab" data-id="'+esc(m.id)+'">🏷️ Étiquette à coller sur le colis (facultatif)</button>':'')+'<button class="b b-line" data-a="pNew">Faire une autre demande</button></div>';}
   h+='<h3>Je suis à</h3><div class="chips" role="radiogroup">'+zs.map(z=>'<label><input type="radio" name="p_city" value="'+esc(z)+'"'+(PV.city===z?' checked':'')+'><span>📍 '+esc(z)+'</span></label>').join('')+'</div>';
   h+='<h3>Comment voulez-vous demander ?</h3><div class="big4">'+
     '<button class="b b-sun" data-a="pmode" data-v="vocal" aria-pressed="'+(PV.mode==='vocal')+'"><span class="i">🎤</span>Envoyer un vocal<small>Je parle, c\'est tout</small></button>'+
@@ -1067,7 +1134,8 @@ function suiviCard(m){
   return '<div class="card stack"><div class="c-head"><span class="c-no">N° '+esc(m.no)+'</span><span class="c-meta">'+esc(s.zone||'')+(s.de?' · '+esc(s.de):'')+'</span></div><div class="steps">'+steps.map(([x,hh],k)=>'<div class="step'+(k<=i?' ok':'')+(k===i?' now':'')+'"><span class="d" aria-hidden="true"></span><div><b>'+x+'</b>'+(k<=i&&hh?' <span class="muted small">'+hh+'</span>':'')+'</div></div>').join('')+'</div>'+
     (s.livreur&&s.statut!=='livree'?'<div class="who"><span>🛵 '+esc(s.livreur.nom)+' · <span class="num" style="font-size:15px">'+telFmt(s.livreur.tel)+'</span></span><a class="b b-line b-sm" href="'+telLink(s.livreur.tel)+'">📞 Appeler</a></div>':'')+
     (+s.prix?'<div class="small">💵 Prix de la course : <b>'+F(s.prix)+'</b>'+(s.statut==='livree'&&PUB&&PUB.tel?' · <a href="'+waLink(PUB.tel,'Bonjour, pour ma course N° '+m.no+' le prix noté est '+F(s.prix)+', mais ce n\'est pas ce que j\'ai payé.')+'" target="_blank" rel="noopener">Pas le bon prix ?</a>':'')+'</div>':'')+
-    (m.cl&&s.statut!=='livree'?'<div class="small">🔐 Code de livraison : <b class="code">'+esc(m.cl)+'</b></div>':'')+payPubHtml(m,SUIVI[m.id])+'</div>';
+    (m.cl&&s.statut!=='livree'?'<div class="small">🔐 Code de livraison : <b class="code">'+esc(m.cl)+'</b></div>':'')+payPubHtml(m,SUIVI[m.id])+
+    (s.type!=='personne'&&m.ty!=='personne'&&(s.statut==='nouvelle'||s.statut==='prise')?'<div><button class="b b-line b-sm" data-a="pLab" data-id="'+esc(m.id)+'">🏷️ Étiquette (facultatif)</button></div>':'')+'</div>';
 }
 // enregistrement du vocal (débit bas pour un petit fichier)
 let MR=null,recTimer=null,recT0=0;
@@ -1087,7 +1155,7 @@ function recStop(){try{if(MR&&MR.state!=='inactive')MR.stop();}catch(e){}}
 async function pubSend(p){
   if(PV.sending)return;PV.sending=true;renderKeepPub();
   try{const r=await rpc('liv_demande',{p_code:CCODE,p});lsSet('tl-montel',telFmt(p.cli.tel));
-    MINE.push({id:r.id,no:r.no,tk:r.tk,dtk:r.dtk,cl:r.cl||'',t:Date.now()});lsSet('tl-mine-'+CCODE,MINE);
+    MINE.push({id:r.id,no:r.no,tk:r.tk,dtk:r.dtk,cl:r.cl||'',t:Date.now(),ty:p.type||'colis',a:p.a||'',dt:(p.dest&&p.dest.tel)||'',ct:p.cli.tel});lsSet('tl-mine-'+CCODE,MINE);
     PV.done=r.id;PV.mode='';PV.vocal=null;PV.pos=null;PV.recSec=0;PV.f={};buzz();window.scrollTo(0,0);}
   catch(e){toast(errMsg(e));}
   PV.sending=false;renderPublic();pubSuivi();
@@ -1152,6 +1220,11 @@ document.addEventListener('click',async e=>{
   const el=e.target.closest('[data-a]');if(!el)return;const a=el.dataset.a,id=el.dataset.id;
   if(a==='closeBg'){if(e.target===el)closeSheet();return;}
   if(a==='close')return closeSheet();
+  // étiquettes et scanner
+  if(a==='lab'){const c=crs(id);if(c)labSheet(c);return;}
+  if(a==='labPrint'){labPrint();return;}
+  if(a==='pLab'){const m=MINE.find(x=>x.id===id);if(m)pubLabSheet(m);return;}
+  if(a==='scan'){scanSheet();return;}
   // entrée
   if(a==='goAuth'){V.auth.su=el.dataset.v==='su';MODE='auth';render();window.scrollTo(0,0);return;}
   if(a==='authMode'){V.auth.su=el.dataset.v==='su';render();return;}
@@ -1209,7 +1282,7 @@ document.addEventListener('click',async e=>{
   if(a==='dispo'){const me=lv(MV.me.id)||MV.me;await mdo('dispo','',{v:!me.dispo});return;}
   if(a==='take'){await mdo('prendre',id,{},'Course pour vous ✓');buzz();return;}
   if(a==='mstep'){const c=crs(id);if(c&&recSheetOk(c))return recSheet(c);await mdo('recup',id,{},'Colis récupéré');return;}
-  if(a==='mlivre'){const c=crs(id);if(!c)return;if(c.codeReq||S.ent.photoLiv||!(+c.prix)||(doorAmt(c)>0&&payOpts().length>1))return livreSheet(c);
+  if(a==='mlivre'){const c=crs(id);if(!c)return;if(c.codeReq||c.sansCode||S.ent.photoLiv||!(+c.prix)||(doorAmt(c)>0&&payOpts().length>1))return livreSheet(c);
     if(el.dataset.arm!=='1'){el.dataset.arm='1';el.textContent='Sûr ? Touchez encore pour confirmer';return;}await mdo('livre',id,{},'Course livrée ✓');return;}
   // page clients
   if(a==='pmode'){PV.mode=PV.mode===el.dataset.v?'':el.dataset.v;PV.done=null;renderPublic();return;}
@@ -1232,6 +1305,8 @@ document.addEventListener('click',async e=>{
 });
 document.addEventListener('change',e=>{
   const t=e.target;
+  if(t.name==='f_type'){const w=$('f_colisw');if(w)w.hidden=t.value==='personne';return;}
+  if(t.id==='f_code'){t.dataset.touched='1';updCodeHint();return;}
   if((t.id==='e_cover'||t.id==='e_logo')&&t.files&&t.files[0]){const k=t.id==='e_cover'?'cover':'logo';readPhoto(t.files[0],u=>{put('set','ent',{[k]:u});render();toast(k==='cover'?'Couverture ajoutée':'Photo ajoutée');uploadImgs();},k==='cover'?1280:480,.82);t.value='';return;}
   if(t.id==='lv_photo'&&t.files&&t.files[0]){readPhoto(t.files[0],u=>{const im=$('lv_prev');if(im){im.src=u;im.hidden=false;im.dataset.u=u;}},900,.7);return;}
   if(t.id==='f_tarif'&&t.value){const p=$('f_prix');if(p)p.value=t.value;return;}
@@ -1251,6 +1326,7 @@ document.addEventListener('change',e=>{
   if(t.name==='pp_mode'){PV.f.pp_mode=t.value;mineRefresh();return;}
 });
 document.addEventListener('input',e=>{const t=e.target;
+  if(t.id==='f_march'){const k=$('f_code');if(k&&!k.disabled&&!k.dataset.touched&&!(k.dataset.had==='1'))k.checked=courseNeedsCode(num(t.value));updCodeHint();return;}
   if(/^(k_de|k_a|k_tel|k_dest|k_march|v_tel)$/.test(t.id||'')){PV.f[t.id]=t.value;return;}
   if(t.id==='lv_prix'){updPay();return;}
   if(t.id==='f_clitel'&&!$('fCourse').dataset.id){const c=clientHint(t.value),h=$('f_hint');if(!h)return;
@@ -1279,6 +1355,7 @@ document.addEventListener('submit',async e=>{
     whenSB(async()=>{try{const v=await mLogin(m.code,tel9(m.tel),pin);if(!v||!v.ok)throw new Error(v&&v.erreur||'Numéro ou code incorrect');
         MEM={code:m.code,tel:tel9(m.tel),pin};lsSet('tl-mem',MEM);lsSet('tl-lastcode',m.code);setMV(v);livHome(m.code);startMembre();}
       catch(err){b.disabled=false;b.textContent='Entrer';const t=errMsg(err);say(/introuvable/i.test(t)?'Société « '+m.code+' » introuvable. Écrivez le mot qui est après « livreur= » dans le lien reçu sur WhatsApp (ex : seck-livraison).':t);}});return;}
+  if(f.id==='fScan'){const v=fv('sc_no'),c=findColis(v);closeSheet();if(!c){toast(MODE==='membre'&&MV&&MV.role!=='zone'?'Ce colis n\'est pas dans vos courses':'Pas de course N° '+digits(v));return;}openColis(c);return;}
   if(f.id==='fCourse'){const o=readCourseForm();if(o.cli.tel.length<9&&!o.de){toast('Mettez au moins le téléphone du client ou l\'adresse');return;}
     if(f.dataset.id){await doEditCourse(f.dataset.id,o);closeSheet();render();return;}
     const to=solo()?SOLO_ID:fv('f_to');const ok=await doNewCourse(Object.assign(o,{src:fv('f_src')||'tel'}),to);if(ok){closeSheet();V.cf='actives';render();}return;}
@@ -1310,7 +1387,7 @@ document.addEventListener('submit',async e=>{
   if(f.id==='fLivre'){const c=crs(f.dataset.id);if(!c)return;const code=digits(fv('lv_code')),im=$('lv_prev'),photo=im&&im.dataset.u?im.dataset.u.split(',')[1]:'';
     let prix=0;if(!(+c.prix)){const px=fv('lv_px');if(!px){toast('Choisissez le prix de la course');return;}
       if(px==='autre'){prix=Math.round(num(fv('lv_prix')));if(prix<=0){toast('Écrivez le prix');return;}}else if(px!=='patron')prix=+px;}
-    if(c.codeReq&&code.length!==4){toast('Le code a 4 chiffres');return;}if(S.ent.photoLiv&&!photo){toast('Prenez la photo du colis');return;}
+    if(c.codeReq&&code.length!==4){toast('Le code a 4 chiffres');return;}if((S.ent.photoLiv||c.sansCode)&&!photo){toast('Prenez la photo du colis');return;}
     const pay=fv('lv_pay');closeSheet();await mdo('livre',c.id,Object.assign({code,photo,prix},pay?{pay}:{}),'Course livrée ✓');return;}
   if(f.id==='fClient'){const tel=tel9(fv('k_tel'));if(tel.length<9){toast('Écrivez votre numéro (9 chiffres)');return;}
     const typ=fv('k_type');const tar=(PUB.tarifs||[]).find(t=>t.z===PV.city&&(typ==='personne'?/taxi/i.test(t.lieu):!/taxi/i.test(t.lieu)));
@@ -1330,6 +1407,141 @@ function livHome(code){if(!code)return;try{const base=location.href.split(/[?#]/
   document.querySelectorAll('link[rel="manifest"]').forEach(l=>l.remove());
   const l=document.createElement('link');l.rel='manifest';l.href='data:application/manifest+json,'+encodeURIComponent(JSON.stringify(mf));document.head.appendChild(l);
   const t=document.querySelector('meta[name="apple-mobile-web-app-title"]');if(t)t.content='Livreur';}catch(e){}}
+// ===== Étiquettes des colis (facultatives) : à coller sur le colis, avec un code QR que l'on scanne =====
+// petit générateur de code QR (octets, correction M, versions 1 à 10 : assez pour le lien d'un colis)
+const QR=(()=>{
+  const ECC=[0,10,16,26,18,24,16,18,22,22,26],BLK=[0,1,1,1,2,2,4,4,4,5,5];
+  const raw=v=>{let r=(16*v+128)*v+64;if(v>=2){const n=Math.floor(v/7)+2;r-=(25*n-10)*n-55;if(v>=7)r-=36;}return r;};
+  const dcw=v=>Math.floor(raw(v)/8)-ECC[v]*BLK[v];
+  const bit=(x,i)=>((x>>>i)&1)!==0;
+  const mul=(x,y)=>{let z=0;for(let i=7;i>=0;i--){z=(z<<1)^((z>>>7)*0x11D);z^=((y>>>i)&1)*x;}return z;};
+  const divisor=d=>{const r=new Array(d).fill(0);r[d-1]=1;let root=1;for(let i=0;i<d;i++){for(let j=0;j<d;j++){r[j]=mul(r[j],root);if(j+1<d)r[j]^=r[j+1];}root=mul(root,2);}return r;};
+  const rem=(data,dv)=>{const r=dv.map(()=>0);for(const b of data){const f=b^r.shift();r.push(0);dv.forEach((c,i)=>{r[i]^=mul(c,f);});}return r;};
+  function make(text){
+    const by=Array.from(new TextEncoder().encode(text));
+    let v=1;for(;v<=10;v++){if(4+(v<10?8:16)+by.length*8<=dcw(v)*8)break;}
+    if(v>10)throw new Error('QR : texte trop long');
+    const cc=v<10?8:16,cap=dcw(v)*8,bits=[];
+    const push=(val,n)=>{for(let i=n-1;i>=0;i--)bits.push((val>>>i)&1);};
+    push(4,4);push(by.length,cc);by.forEach(b=>push(b,8));
+    push(0,Math.min(4,cap-bits.length));push(0,(8-bits.length%8)%8);
+    for(let p=0xEC;bits.length<cap;p^=0xEC^0x11)push(p,8);
+    const data=[];for(let i=0;i<bits.length;i+=8){let b=0;for(let j=0;j<8;j++)b=(b<<1)|bits[i+j];data.push(b);}
+    const nb=BLK[v],el=ECC[v],rc=Math.floor(raw(v)/8),ns=nb-rc%nb,sl=Math.floor(rc/nb),dv=divisor(el),blocks=[];
+    for(let i=0,k=0;i<nb;i++){const d=data.slice(k,k+sl-el+(i<ns?0:1));k+=d.length;const e=rem(d,dv);if(i<ns)d.push(0);blocks.push(d.concat(e));}
+    const cw=[];for(let i=0;i<blocks[0].length;i++)blocks.forEach((b,j)=>{if(i!==sl-el||j>=ns)cw.push(b[i]);});
+    const size=v*4+17,M=[...Array(size)].map(()=>Array(size).fill(false)),Fn=[...Array(size)].map(()=>Array(size).fill(false));
+    const set=(x,y,d)=>{M[y][x]=d;Fn[y][x]=true;};
+    for(let i=0;i<size;i++){set(6,i,i%2===0);set(i,6,i%2===0);}
+    const finder=(x,y)=>{for(let dy=-4;dy<=4;dy++)for(let dx=-4;dx<=4;dx++){const d=Math.max(Math.abs(dx),Math.abs(dy)),xx=x+dx,yy=y+dy;if(xx>=0&&xx<size&&yy>=0&&yy<size)set(xx,yy,d!==2&&d!==4);}};
+    finder(3,3);finder(size-4,3);finder(3,size-4);
+    const ap=[];if(v>1){const n=Math.floor(v/7)+2,step=Math.ceil((v*4+4)/(n*2-2))*2;ap.push(6);for(let p=v*4+10;ap.length<n;p-=step)ap.splice(1,0,p);}
+    const last=ap.length-1;
+    ap.forEach((a,i)=>ap.forEach((b,j)=>{if((i===0&&j===0)||(i===0&&j===last)||(i===last&&j===0))return;for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++)set(a+dx,b+dy,Math.max(Math.abs(dx),Math.abs(dy))!==1);}));
+    const fmt=m=>{let r=m;for(let i=0;i<10;i++)r=(r<<1)^((r>>>9)*0x537);const b=((m<<10)|r)^0x5412;
+      for(let i=0;i<=5;i++)set(8,i,bit(b,i));set(8,7,bit(b,6));set(8,8,bit(b,7));set(7,8,bit(b,8));for(let i=9;i<15;i++)set(14-i,8,bit(b,i));
+      for(let i=0;i<8;i++)set(size-1-i,8,bit(b,i));for(let i=8;i<15;i++)set(8,size-15+i,bit(b,i));set(8,size-8,true);};
+    fmt(0);
+    if(v>=7){let r=v;for(let i=0;i<12;i++)r=(r<<1)^((r>>>11)*0x1F25);const b=v<<12|r;for(let i=0;i<18;i++){const c=bit(b,i),a=size-11+i%3,q=Math.floor(i/3);set(a,q,c);set(q,a,c);}}
+    let n=0;for(let right=size-1;right>=1;right-=2){if(right===6)right=5;for(let vert=0;vert<size;vert++)for(let j=0;j<2;j++){const x=right-j,up=((right+1)&2)===0,y=up?size-1-vert:vert;if(!Fn[y][x]&&n<cw.length*8){M[y][x]=bit(cw[n>>>3],7-(n&7));n++;}}}
+    const inv=(m,x,y)=>{switch(m){case 0:return (x+y)%2===0;case 1:return y%2===0;case 2:return x%3===0;case 3:return (x+y)%3===0;case 4:return (Math.floor(x/3)+Math.floor(y/2))%2===0;case 5:return x*y%2+x*y%3===0;case 6:return (x*y%2+x*y%3)%2===0;default:return ((x+y)%2+x*y%3)%2===0;}};
+    const apply=m=>{for(let y=0;y<size;y++)for(let x=0;x<size;x++)if(!Fn[y][x]&&inv(m,x,y))M[y][x]=!M[y][x];};
+    const score=()=>{let s=0,dark=0;for(let y=0;y<size;y++){let r=1,c=1;for(let x=0;x<size;x++){if(M[y][x])dark++;
+      if(x>0){if(M[y][x]===M[y][x-1]){r++;if(r===5)s+=3;else if(r>5)s++;}else r=1;if(M[x][y]===M[x-1][y]){c++;if(c===5)s+=3;else if(c>5)s++;}else c=1;}
+      if(x<size-1&&y<size-1){const k=M[y][x];if(k===M[y][x+1]&&k===M[y+1][x]&&k===M[y+1][x+1])s+=3;}}}
+      return s+Math.max(0,Math.ceil(Math.abs(dark*20-size*size*10)/(size*size))-1)*10;};
+    let best=0,bs=Infinity;for(let m=0;m<8;m++){apply(m);fmt(m);const s=score();if(s<bs){bs=s;best=m;}apply(m);}
+    apply(best);fmt(best);return {size,M};
+  }
+  return {svg(text){const {size,M}=make(text),q=4,w=size+q*2;let d='';for(let y=0;y<size;y++)for(let x=0;x<size;x++)if(M[y][x])d+='M'+(x+q)+' '+(y+q)+'h1v1h-1z';
+    return '<svg viewBox="0 0 '+w+' '+w+'" shape-rendering="crispEdges" role="img" aria-label="Code QR"><rect width="'+w+'" height="'+w+'" fill="#fff"/><path d="'+d+'" fill="#111"/></svg>';}};
+})();
+const colisUrl=id=>SITE+'?colis='+encodeURIComponent(id);
+const nbOf=c=>Math.max(1,Math.min(50,+c.nb||1));
+const isDepot=c=>c.src==='boutique'&&c.type!=='personne'&&(c.statut==='nouvelle'||c.statut==='prise');
+function depotAge(c){const d=Math.floor((Date.now()-(+(c.t&&c.t.cree)||Date.now()))/864e5);
+  return d<1?{t:"🏪 Arrivé au dépôt aujourd'hui",cls:''}:{t:'🏪 Au dépôt depuis '+d+' jour'+(d>1?'s':''),cls:d>=2?'late':'warn'};}
+const labWhen=t=>{if(!t)return '';const d=new Date(+t);return pad(d.getDate())+'/'+pad(d.getMonth()+1)+' '+hhmm(t);};
+function codeHint(on,photo){return on?'Celui qui reçoit donne ce code au livreur. Petit colis ? Enlevez le code.':photo?'📷 Sans code : le livreur devra prendre une photo du colis livré.':'Pas de code pour ce colis.';}
+function updCodeHint(){const k=$('f_code'),h=$('f_codeh'),f=$('fCourse');if(!k||!h)return;
+  h.textContent=codeHint(k.checked,k.dataset.had==='1'||(!(f&&f.dataset.id)&&courseNeedsCode(num(fv('f_march')))));}
+// une étiquette : o = ce qu'on écrit dessus (jamais le code de livraison)
+function labBox(o,k){const to=o.dn||(o.dt?telFmt(o.dt):'—');
+  return '<div class="labw"><div class="lab"><div class="l-top">'+o.logo+'<b>'+esc(o.nom)+'</b><span>'+esc(o.quand)+'</span></div>'+
+    '<div class="l-id"><b>N° '+esc(o.no||'—')+'</b><span class="l-n"><small>Colis</small>'+k+'/'+o.n+'</span></div>'+
+    '<div class="l-mid"><div class="l-qr">'+QR.svg(o.qr)+'</div><div class="l-a"><small>Livrer à'+(o.zone?' · '+esc(o.zone):'')+'</small><strong>'+esc(o.a||'Voir avec la société')+'</strong>'+(o.rep?'<em>'+esc(o.rep)+'</em>':'')+'</div></div>'+
+    '<div class="l-note">Note<i></i></div>'+
+    '<div class="l-to"><small>Pour</small><strong>'+esc(to)+'</strong>'+(o.dn&&o.dt?'<span>'+esc(telFmt(o.dt))+'</span>':'')+'</div>'+
+    '<div class="l-from"><small>De</small>'+esc([o.en,o.et?telFmt(o.et):''].filter(Boolean).join(' · ')||'—')+'</div>'+
+    (o.pay?'<div class="l-pay'+(o.due?' l-due':'')+'">'+esc(o.pay)+'</div>':'')+'</div></div>';}
+let LABP='';
+function labSheet(c){const n=nbOf(c),door=doorAmt(c);
+  const o={logo:brandLogo(40),nom:S.ent.nom||'Teranga Livraison',quand:labWhen(c.t&&c.t.cree),no:c.no,n,qr:colisUrl(c.id),a:c.a,rep:c.note,zone:zones().length>1?c.zone:'',
+    dn:c.dest&&c.dest.nom,dt:c.dest&&c.dest.tel,en:c.cli&&c.cli.nom,et:c.cli&&c.cli.tel,
+    pay:door>0?'À encaisser '+F(door):c.paie==='dest'&&!(+c.prix)?'Prix à fixer':'Rien à payer',due:door>0};
+  LABP=Array.from({length:n},(_,i)=>labBox(o,i+1)).join('');
+  openSheet('Étiquette'+(n>1?'s':'')+' N° '+(c.no||''),'<div class="labs">'+LABP+'</div><div class="stack">'+
+    '<button class="b b-sun b-big" data-a="labPrint">🖨️ Imprimer '+(n>1?'les '+n+' étiquettes':'l\'étiquette')+'</button>'+
+    '<div class="hint">Facultatif. Une étiquette par colis, 4 sur une feuille A4. Sur le téléphone vous pouvez aussi « Enregistrer en PDF ».</div>'+
+    '<div class="note">'+(c.no?'Sans imprimante : écrivez <b>N° '+esc(c.no)+'</b> au marqueur sur '+(n>1?'chaque colis':'le colis')+'.':'Le numéro arrive quand internet revient.')+'</div>'+
+    '<div class="hint">Le livreur scanne le code QR (bouton 📷 Scanner) et la course s\'ouvre. Le code de livraison n\'est jamais écrit sur l\'étiquette.</div></div>');}
+function pubLabSheet(m){const s=SUIVI[m.id]||m.last||{},e=PUB||{};
+  LABP=labBox({logo:brandLogo(40,e.logo),nom:e.nom||'Teranga Livraison',quand:labWhen(m.t),no:m.no,n:1,qr:colisUrl(m.id),a:m.a||s.a||'',zone:'',dn:'',dt:m.dt||'',en:'',et:m.ct||'',pay:''},1);
+  openSheet('Étiquette N° '+(m.no||''),'<div class="labs">'+LABP+'</div><div class="stack"><button class="b b-sun b-big" data-a="labPrint">🖨️ Imprimer ou enregistrer en PDF</button>'+
+    '<div class="hint">Facultatif : si vous avez une imprimante, collez l\'étiquette sur le colis. Sinon, écrivez <b>N° '+esc(m.no)+'</b> sur le colis.</div></div>');}
+function labPrint(){const r=$('printRoot');if(!r||!LABP)return;r.innerHTML=LABP;setTimeout(()=>{try{window.print();}catch(e){toast('Impression impossible ici : écrivez le numéro sur le colis');}},80);}
+
+// ----- scanner : la caméra lit le code QR de l'étiquette, ou on tape le numéro -----
+let SCAN=null,JSQR=null,SCAN0=Q.get('colis')||'';
+function scanSheet(){
+  openSheet('Scanner une étiquette','<div class="stack"><div class="scanbox"><video id="scVid" playsinline muted autoplay></video><i aria-hidden="true"></i></div>'+
+    '<div class="hint" id="scMsg" aria-live="polite">Visez le code QR de l\'étiquette.</div>'+
+    '<form id="fScan" class="row"><input id="sc_no" inputmode="numeric" autocomplete="off" placeholder="Ou tapez le N° (ex : 1023)" style="flex:1 1 170px"><button class="b b-sun b-sm" type="submit">Ouvrir</button></form></div>');
+  startScan();}
+function scanMsg(t){const m=$('scMsg');if(m)m.textContent=t;}
+function loadJsQR(){if(window.jsQR)return Promise.resolve();if(JSQR)return JSQR;
+  JSQR=new Promise((ok,ko)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+    s.onload=()=>window.jsQR?ok():ko(new Error('jsQR'));s.onerror=()=>{JSQR=null;s.remove();ko(new Error('jsQR'));};document.head.appendChild(s);});
+  return JSQR;}
+async function startScan(){stopScan();const v=$('scVid');if(!v)return;
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){scanMsg('Caméra pas disponible ici : tapez le numéro de l\'étiquette.');return;}
+  const me={stream:null,timer:0,stop:false};SCAN=me;
+  try{me.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});}
+  catch(e){if(SCAN===me)SCAN=null;scanMsg(inApp?'Ouvrez le lien dans Safari ou Chrome pour scanner, ou tapez le numéro.':'Caméra bloquée : autorisez-la dans les réglages du téléphone, ou tapez le numéro de l\'étiquette.');return;}
+  if(me.stop||!$('scVid')){me.stream.getTracks().forEach(t=>t.stop());return;}
+  v.srcObject=me.stream;try{await v.play();}catch(e){}
+  let det=null;try{if('BarcodeDetector' in window){const f=await BarcodeDetector.getSupportedFormats();if(f.includes('qr_code'))det=new BarcodeDetector({formats:['qr_code']});}}catch(e){}
+  if(!det){try{await loadJsQR();}catch(e){if(!me.stop)scanMsg('Le lecteur ne s\'ouvre pas (internet ?) : tapez le numéro de l\'étiquette.');return;}}
+  const fn=typeof window.jsQR==='function'?window.jsQR:window.jsQR&&window.jsQR.default;
+  const cv=document.createElement('canvas'),cx=cv.getContext('2d',{willReadFrequently:true});
+  const tick=async()=>{if(me.stop)return;let txt='';
+    try{if(v.readyState>=2&&v.videoWidth){
+      if(det){const r=await det.detect(v);if(r&&r[0])txt=r[0].rawValue||'';}
+      else if(fn){const k=Math.min(1,640/Math.max(v.videoWidth,v.videoHeight));cv.width=Math.round(v.videoWidth*k);cv.height=Math.round(v.videoHeight*k);
+        cx.drawImage(v,0,0,cv.width,cv.height);const im=cx.getImageData(0,0,cv.width,cv.height);const r=fn(im.data,cv.width,cv.height,{inversionAttempts:'dontInvert'});if(r)txt=r.data||'';}}}catch(e){}
+    if(me.stop)return;
+    if(txt){buzz();scanFound(txt);return;}
+    me.timer=setTimeout(tick,180);};
+  tick();}
+function stopScan(){const s=SCAN;SCAN=null;if(!s)return;s.stop=true;clearTimeout(s.timer);if(s.stream)s.stream.getTracks().forEach(t=>t.stop());}
+function findColis(v){v=String(v||'').trim();const m=v.match(/[?&]colis=([A-Za-z0-9_-]+)/);if(m)return crs(m[1])||null;
+  const n=digits(v);if(n&&n.length<9)return L('courses').find(c=>String(c.no)===n)||null;return null;}
+function scanFound(txt){const c=findColis(txt);closeSheet();
+  if(!c){toast(/[?&]colis=/.test(txt)||digits(txt)?(MODE==='membre'&&MV&&MV.role!=='zone'?'Ce colis n\'est pas dans vos courses':'Colis introuvable'):'Ce code QR n\'est pas une étiquette de colis');return;}
+  openColis(c);}
+// on montre la course scannée : dans la liste (elle clignote), sinon dans une feuille
+function openColis(c){const liv=MODE==='membre'&&MV&&MV.role!=='zone';let ctx='capo';
+  if(liv){const me=MV.me,mine=c.lid===me.id&&actif(c),libre=c.statut==='nouvelle'&&libreOk()&&c.zone===me.zone;
+    if(!mine&&!libre){openSheet('Colis N° '+(c.no||''),'<div class="empty">'+(c.lid===me.id&&c.statut==='livree'?'Ce colis est déjà livré ✓':'Ce colis n\'est pas dans vos courses. Demandez au capo de vous l\'envoyer.')+'</div>');return;}
+    ctx=mine?'mine':'libre';}
+  else{V.tab='courses';if(V.zf&&V.zf!==c.zone)V.zf='';V.cf=isDepot(c)?'depot':actif(c)||c.statut==='nouvelle'?'actives':'toutes';}
+  closeSheet();render();const el=$('crs-'+c.id);
+  if(el){el.scrollIntoView({block:'center',behavior:'smooth'});el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash');}
+  else openSheet('Colis N° '+(c.no||''),'<div class="list">'+courseCard(c,ctx)+'</div>');}
+function openPending(){if(!SCAN0)return;const id=SCAN0;SCAN0='';
+  try{const u=new URL(location.href);u.searchParams.delete('colis');history.replaceState(null,'',u.pathname+u.search+u.hash);}catch(e){}
+  const c=crs(id);if(c)setTimeout(()=>openColis(c),250);else toast(MODE==='membre'&&MV&&MV.role!=='zone'?'Ce colis n\'est pas dans vos courses':'Colis introuvable');}
+
 // ===== Démarrage : on choisit l'écran selon le lien =====
 function boot(){
   initSB();
